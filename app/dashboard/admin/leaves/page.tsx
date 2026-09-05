@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { format } from "date-fns";
 import { Suspense } from "react";
 
-export default function LeavesPage() {
+export default function LeavesPage({ searchParams }: { searchParams: Promise<{ employee?: string }> }) {
   return (
     <div className="space-y-6">
 
@@ -22,19 +22,20 @@ export default function LeavesPage() {
           </div>
         </div>
       }>
-        <LeavesData />
+        <LeavesData searchParams={searchParams} />
       </Suspense>
     </div>
   );
 }
 
-async function LeavesData() {
+async function LeavesData({ searchParams }: { searchParams: Promise<{ employee?: string }> }) {
   const session = await getServerSession(authOptions);
     const user = session?.user;
 
   if (!user) {
     redirect('/login');
   }
+  const { employee: employeeId } = await searchParams;
 
   let dbUser = null;
   let leavesData: LeaveRequestData[] = [];
@@ -50,7 +51,7 @@ async function LeavesData() {
 
     if (companyId) {
       const rawLeaves = await prisma.leaveRequest.findMany({
-        where: { companyId },
+        where: { companyId, ...(employeeId ? { employeeId } : {}) },
         include: { 
           employee: { include: { department: true } },
           leaveType: true 

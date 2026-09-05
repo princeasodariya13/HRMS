@@ -92,6 +92,13 @@ NexaHR AI includes a suite of unit tests and end-to-end (E2E) tests to ensure ro
 
 For an in-depth look at the vision, architecture, and feature specification, please check the Product Requirements Document (PRD) located in the `/docs/PRD` directory.
 
+## Future Roadmap
+
+* Expand payroll reporting with tax filings, configurable local compliance rules, and scheduled payroll delivery.
+* Add richer workforce planning with compensation bands, succession planning, and skills-based headcount forecasting.
+* Introduce self-service workflow automation for onboarding, document expiry reminders, and policy acknowledgements.
+* Extend the analytics layer with configurable dashboards, exports, and anomaly explanations for HR teams.
+
 ## 📄 License
 
 This project is proprietary and intended for Enterprise use.

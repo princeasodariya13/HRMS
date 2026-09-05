@@ -25,11 +25,13 @@ type PayrollClientProps = {
   isDemo: boolean;
   employees: { id: string; name: string }[];
   salaryStructures: { id: string; name: string }[];
+  role: string;
 }
 
-export function PayrollClient({ stats, recentRuns, isDemo, salaryStructures }: PayrollClientProps) {
+export function PayrollClient({ stats, recentRuns, isDemo, salaryStructures, role }: PayrollClientProps) {
   const router = useRouter();
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const canWritePayroll = ["SUPER_ADMIN", "COMPANY_ADMIN", "HR_PAYROLL_USER", "HR_PAYROLL_MANAGER", "PAYROLL_MANAGER"].includes(role);
 
   return (
     <div className="space-y-6">
@@ -47,11 +49,11 @@ export function PayrollClient({ stats, recentRuns, isDemo, salaryStructures }: P
           )}
           <button 
             onClick={() => setIsWizardOpen(true)}
-            disabled={isDemo}
+            disabled={isDemo || !canWritePayroll}
             className="bg-[#111827] dark:bg-[#F3F4F6] text-white dark:text-[#111827] hover:bg-[#1f2937] dark:hover:bg-[#E5E7EB] shadow-sm rounded-xl px-4 py-2.5 text-sm font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-70"
           >
             <Plus className="w-4 h-4" />
-            New Payrun
+            {canWritePayroll ? "New Payrun" : "Payroll read-only"}
           </button>
         </div>
       </div>

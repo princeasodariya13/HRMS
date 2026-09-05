@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { AllocationsClient } from "./AllocationsClient";
 
-export default async function AdminLeaveAllocationsPage() {
+export default async function AdminLeaveAllocationsPage({ searchParams }: { searchParams: Promise<{ employee?: string }> }) {
   const session = await getServerSession(authOptions);
   const user = session?.user;
 
@@ -16,6 +16,7 @@ export default async function AdminLeaveAllocationsPage() {
   let allocations: any[] = [];
   let employees: any[] = [];
   let leaveTypes: any[] = [];
+  const { employee: employeeId } = await searchParams;
 
   try {
     dbUser = await prisma.user.findUnique({
@@ -33,7 +34,7 @@ export default async function AdminLeaveAllocationsPage() {
 
     if (companyId || isSuperAdmin) {
       allocations = await prisma.leaveAllocation.findMany({
-        where: isSuperAdmin ? {} : { employee: { companyId } },
+        where: isSuperAdmin ? (employeeId ? { employeeId } : {}) : { employee: { companyId, ...(employeeId ? { id: employeeId } : {}) } },
         include: {
           employee: true,
           leaveType: true,

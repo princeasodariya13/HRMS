@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { format } from "date-fns";
 import { Suspense } from "react";
 
-export default function AttendancePage() {
+export default function AttendancePage({ searchParams }: { searchParams: Promise<{ employee?: string }> }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -21,19 +21,20 @@ export default function AttendancePage() {
           <div className="text-[#9CA3AF] dark:text-[#6B7280]">Loading attendance records...</div>
         </div>
       }>
-        <AttendanceData />
+        <AttendanceData searchParams={searchParams} />
       </Suspense>
     </div>
   );
 }
 
-async function AttendanceData() {
+async function AttendanceData({ searchParams }: { searchParams: Promise<{ employee?: string }> }) {
   const session = await getServerSession(authOptions);
     const user = session?.user;
 
   if (!user) {
     redirect('/login');
   }
+  const { employee: employeeId } = await searchParams;
 
   let dbUser = null;
   let initialLogs: any[] = [];
@@ -53,7 +54,7 @@ async function AttendanceData() {
 
       const logs = await prisma.attendance.findMany({
         where: {
-          employee: { companyId },
+          employee: { companyId, ...(employeeId ? { id: employeeId } : {}) },
           date: { gte: today }
         },
         include: {

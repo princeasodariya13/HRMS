@@ -52,7 +52,7 @@ async function PayrollData() {
   try {
     dbUser = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { companyId: true }
+      select: { companyId: true, role: true }
     });
 
     const companyId = dbUser?.companyId;
@@ -124,5 +124,5 @@ async function PayrollData() {
     console.warn("Prisma Database connection failed in Payroll:. Next.js Dev overlay suppressed.");
   }
 
-  return <PayrollClient stats={stats} recentRuns={recentRuns} isDemo={isDemo} employees={employeesList} salaryStructures={salaryStructures} />;
+  return <PayrollClient stats={stats} recentRuns={recentRuns} isDemo={isDemo} employees={employeesList} salaryStructures={salaryStructures} role={dbUser?.role || "EMPLOYEE"} />;
 }

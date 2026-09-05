@@ -9,13 +9,19 @@ import { logAudit } from '@/lib/auditLog';
 import { getApplicableContract, calculateWorkedDays, computePayslip } from '@/lib/payroll/engine';
 import { renderPayslipPdf } from '@/lib/payroll/payslip-pdf';
 import { sendPayslipEmail } from '@/lib/mail';
+import { canControlPayroll, canReadPayroll, canWritePayroll } from '@/lib/permissions';
+
+async function getPayrollActor() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error('Unauthorized');
+  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  if (!user) throw new Error('User not found');
+  return user;
+}
 
 export async function getEligibleEmployees(month: number, year: number, structureId: string) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) throw new Error("Unauthorized");
-  
-  const dbUser = await prisma.user.findUnique({ where: { id: session.user.id } });
-  if (!dbUser) throw new Error("User not found");
+  const dbUser = await getPayrollActor();
+  if (!canReadPayroll(dbUser.role)) throw new Error("You do not have access to payroll.");
 
   const periodStart = new Date(year, month - 1, 1);
   const periodEnd = new Date(year, month, 0); // Last day of month
@@ -45,6 +51,7 @@ export async function createDraftPayrun(month: number, year: number, structureId
 
     const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
     if (!dbUser) throw new Error("User not found");
+    if (!canWritePayroll(dbUser.role)) throw new Error("You do not have permission to create payroll runs.");
 
     const periodStart = new Date(year, month - 1, 1);
     const periodEnd = new Date(year, month, 0);
@@ -98,6 +105,8 @@ export async function createDraftPayrun(month: number, year: number, structureId
 
 export async function computePayrun(runId: string) {
   try {
+    const actor = await getPayrollActor();
+    if (!canWritePayroll(actor.role)) throw new Error("You do not have permission to compute payroll.");
     const run = await prisma.payrollRun.findUnique({
       where: { id: runId },
       include: { payslips: true, salaryStructure: { include: { rules: { orderBy: { sequence: 'asc' } } } } }
@@ -165,6 +174,8 @@ export async function computePayrun(runId: string) {
 
 export async function validatePayrun(runId: string) {
   try {
+    const actor = await getPayrollActor();
+    if (!canWritePayroll(actor.role)) throw new Error("You do not have permission to validate payroll.");
     await prisma.payrollRun.update({
       where: { id: runId },
       data: { status: 'APPROVED' }
@@ -178,6 +189,8 @@ export async function validatePayrun(runId: string) {
 
 export async function markPayrunPaid(runId: string) {
   try {
+    const actor = await getPayrollActor();
+    if (!canControlPayroll(actor.role)) throw new Error("Only payroll managers and admins can mark payroll paid.");
     const run = await prisma.payrollRun.findUnique({
       where: { id: runId },
       include: { payslips: true }
@@ -200,10 +213,8 @@ export async function markPayrunPaid(runId: string) {
 
 export async function sendPayrunPayslips(runId: string) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error('Unauthorized');
-    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-    if (!user || user.role === 'EMPLOYEE') throw new Error('Only payroll administrators can send payslips.');
+    const user = await getPayrollActor();
+    if (!canControlPayroll(user.role)) throw new Error('Only payroll managers and admins can send payslips.');
 
     const run = await prisma.payrollRun.findFirst({
       where: { id: runId, companyId: user.companyId },
@@ -233,6 +244,8 @@ export async function sendPayrunPayslips(runId: string) {
 
 export async function deletePayrun(runId: string) {
   try {
+    const actor = await getPayrollActor();
+    if (!canControlPayroll(actor.role)) throw new Error("Only payroll managers and admins can delete payroll runs.");
     const run = await prisma.payrollRun.findUnique({ where: { id: runId } });
     if (!run || run.status === 'PAID') throw new Error("Cannot delete run");
     await prisma.payrollRun.delete({ where: { id: runId } });

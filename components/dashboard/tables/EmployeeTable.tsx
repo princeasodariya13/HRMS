@@ -196,7 +196,7 @@ export function EmployeeTable({ employees = [] }: { employees?: EmployeeData[] }
                         {emp.name.charAt(0)}
                       </div>
                       <div>
-                        <div className="font-semibold text-[#111827] dark:text-[#F3F4F6]">{emp.name}</div>
+                        <Link href={`/dashboard/admin/employees/${emp.id}`} className="font-semibold text-[#111827] dark:text-[#F3F4F6] hover:text-blue-600 hover:underline">{emp.name}</Link>
                         <div className="text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280] text-xs">{emp.email} • {emp.code}</div>
                       </div>
                     </div>

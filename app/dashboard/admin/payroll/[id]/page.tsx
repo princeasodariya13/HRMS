@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
 import { PayrunDetailClient } from "./PayrunDetailClient";
+import { canControlPayroll, canWritePayroll } from "@/lib/permissions";
 
 export default async function PayrunDetailPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -10,8 +11,9 @@ export default async function PayrunDetailPage({ params }: { params: { id: strin
 
   const runId = params.id;
   
-  const run = await prisma.payrollRun.findUnique({
-    where: { id: runId },
+  const dbUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { companyId: true, role: true } });
+  const run = await prisma.payrollRun.findFirst({
+    where: { id: runId, companyId: dbUser?.companyId },
     include: {
       salaryStructure: true,
       payslips: {
@@ -34,6 +36,6 @@ export default async function PayrunDetailPage({ params }: { params: { id: strin
     }))
   };
 
-  return <PayrunDetailClient run={formattedRun} />;
+  return <PayrunDetailClient run={formattedRun} canWritePayroll={canWritePayroll(dbUser?.role || "")} canControlPayroll={canControlPayroll(dbUser?.role || "")} />;
 }
 

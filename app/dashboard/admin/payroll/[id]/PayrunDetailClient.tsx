@@ -5,7 +5,7 @@ import { ArrowLeft, Calculator, CheckCircle2, Lock, FileOutput, Loader2, AlertTr
 import { useRouter } from "next/navigation";
 import { computePayrun, validatePayrun, markPayrunPaid, sendPayrunPayslips } from "../actions";
 
-export function PayrunDetailClient({ run }: { run: any }) {
+export function PayrunDetailClient({ run, canWritePayroll, canControlPayroll }: { run: any; canWritePayroll: boolean; canControlPayroll: boolean }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [warnings, setWarnings] = useState<string[]>([]);
@@ -70,7 +70,7 @@ export function PayrunDetailClient({ run }: { run: any }) {
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
-          {run.status === 'DRAFT' && (
+          {run.status === 'DRAFT' && canWritePayroll && (
             <button 
               onClick={handleCompute}
               disabled={isPending}
@@ -81,7 +81,7 @@ export function PayrunDetailClient({ run }: { run: any }) {
             </button>
           )}
 
-          {run.status === 'PROCESSING' && (
+          {run.status === 'PROCESSING' && canWritePayroll && (
             <button 
               onClick={handleValidate}
               disabled={isPending}
@@ -92,7 +92,7 @@ export function PayrunDetailClient({ run }: { run: any }) {
             </button>
           )}
 
-          {run.status === 'APPROVED' && (
+          {run.status === 'APPROVED' && canControlPayroll && (
             <button 
               onClick={handleMarkPaid}
               disabled={isPending}
@@ -103,7 +103,7 @@ export function PayrunDetailClient({ run }: { run: any }) {
             </button>
           )}
 
-          {run.status === 'PAID' && (
+          {run.status === 'PAID' && canControlPayroll && (
             <button 
               className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm rounded-xl px-4 py-2.5 text-sm font-semibold transition-all flex items-center justify-center gap-2"
               onClick={handleSendPayslips}
