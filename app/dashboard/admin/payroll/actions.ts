@@ -6,201 +6,205 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { PayrollStatus } from '@prisma/client'
 import { logAudit } from '@/lib/auditLog';
+import { getApplicableContract, calculateWorkedDays, computePayslip } from '@/lib/payroll/engine';
 
-export async function runPayrollAction() {
+export async function getEligibleEmployees(month: number, year: number, structureId: string) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) throw new Error("Unauthorized");
+  
+  const dbUser = await prisma.user.findUnique({ where: { id: session.user.id } });
+  if (!dbUser) throw new Error("User not found");
+
+  const periodStart = new Date(year, month - 1, 1);
+  const periodEnd = new Date(year, month, 0); // Last day of month
+
+  // Find all ACTIVE employees in company
+  const employees = await prisma.employee.findMany({
+    where: { companyId: dbUser.companyId, status: 'ACTIVE' },
+    select: { id: true, firstName: true, lastName: true, designation: true }
+  });
+
+  const eligible = [];
+  for (const emp of employees) {
+    const contract = await getApplicableContract(emp.id, periodStart, periodEnd);
+    if (contract && contract.salaryStructureId === structureId) {
+      eligible.push(emp);
+    }
+  }
+
+  return eligible;
+}
+
+export async function createDraftPayrun(month: number, year: number, structureId: string, employeeIds: string[]) {
   try {
     const session = await getServerSession(authOptions);
     const user = session?.user;
-    if (!user) throw new Error("Unauthorized")
+    if (!user) throw new Error("Unauthorized");
 
-    const dbUser = await prisma.user.findUnique({ where: { id: user.id } })
-    if (!dbUser) throw new Error("User not found")
+    const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+    if (!dbUser) throw new Error("User not found");
 
-    // Fetch all active employees with their salary config
-    const activeEmployees = await prisma.employee.findMany({
-      where: { companyId: dbUser.companyId, status: 'ACTIVE' },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        baseSalary: true,
-        allowancePercent: true,
-        deductionPercent: true,
-      }
-    })
-    
-    if (activeEmployees.length === 0) {
-      return { error: "Cannot run payroll: No active employees found in the database. (Add employees first!)" }
-    }
+    const periodStart = new Date(year, month - 1, 1);
+    const periodEnd = new Date(year, month, 0);
 
-    const currentMonth = new Date().getMonth() + 1
-    const currentYear = new Date().getFullYear()
-
-    // Check if payroll was already run for this month
-    const existingRun = await prisma.payrollRun.findFirst({
-      where: {
-        companyId: dbUser.companyId,
-        month: currentMonth,
-        year: currentYear
-      }
-    })
+    const existingRun = await prisma.payrollRun.findUnique({
+      where: { companyId_month_year: { companyId: dbUser.companyId, month, year } }
+    });
 
     if (existingRun) {
-      return { error: "Payroll has already been processed for this month." }
+      return { error: "A payrun already exists for this month." };
     }
 
-    // --- Real per-employee calculation ---
-    // Defaults: 20% allowance, 12% deduction (PF+tax placeholder)
-    const DEFAULT_ALLOWANCE_PCT = 0.20
-    const DEFAULT_DEDUCTION_PCT = 0.12
-    const FALLBACK_BASE_SALARY  = 30000 // Used only if an employee has no baseSalary set
-
-    type PayslipInput = {
-      employeeId: string
-      basicSalary: number
-      allowances: number
-      deductions: number
-      netSalary: number
-    }
-
-    const payslipData: PayslipInput[] = activeEmployees.map((emp) => {
-      const base       = emp.baseSalary ?? FALLBACK_BASE_SALARY
-      const allowPct   = (emp.allowancePercent ?? DEFAULT_ALLOWANCE_PCT * 100) / 100
-      const deductPct  = (emp.deductionPercent ?? DEFAULT_DEDUCTION_PCT * 100) / 100
-      const allowances = parseFloat((base * allowPct).toFixed(2))
-      const deductions = parseFloat((base * deductPct).toFixed(2))
-      const netSalary  = parseFloat((base + allowances - deductions).toFixed(2))
-
-      return {
-        employeeId: emp.id,
-        basicSalary: base,
-        allowances,
-        deductions,
-        netSalary,
-      }
-    })
-
-    const totalAmount = parseFloat(
-      payslipData.reduce((sum, p) => sum + p.netSalary, 0).toFixed(2)
-    )
-
-    // Create the PayrollRun and all Payslips in one transaction
     let createdRunId = "";
     await prisma.$transaction(async (tx) => {
-      const payrollRun = await tx.payrollRun.create({
+      const run = await tx.payrollRun.create({
         data: {
           companyId: dbUser.companyId,
-          month: currentMonth,
-          year: currentYear,
-          totalAmount,
-          status: 'PAID'
-        }
-      })
-      createdRunId = payrollRun.id;
-
-      await tx.payslip.createMany({
-        data: payslipData.map((p) => ({
-          payrollRunId: payrollRun.id,
-          ...p,
-        }))
-      })
-    })
-
-    await logAudit({
-      companyId: dbUser.companyId,
-      userId: user.id,
-      module: 'PAYROLL',
-      action: 'CREATE',
-      recordId: createdRunId,
-      newData: {
-        month: currentMonth,
-        year: currentYear,
-        totalAmount,
-        employeeCount: activeEmployees.length,
-        status: 'PAID',
-      },
-    });
-
-    revalidatePath('/dashboard/admin/payroll')
-    return { success: true }
-  } catch (error: any) {
-    console.error("Run Payroll Error:", error)
-    return { error: error.message || "Failed to run payroll" }
-  }
-}
-
-export async function addIndividualPayrollAction(employeeId: string, amount: number) {
-  try {
-    const session = await getServerSession(authOptions);
-    const user = session?.user;
-    if (!user) throw new Error("Unauthorized")
-
-    const dbUser = await prisma.user.findUnique({ where: { id: user.id } })
-    if (!dbUser) throw new Error("User not found")
-
-    // Security check: verify this employee belongs to the user's company
-    const employee = await prisma.employee.findUnique({ where: { id: employeeId } });
-    if (!employee || employee.companyId !== dbUser.companyId) {
-      throw new Error("Employee not found or access denied.");
-    }
-
-    const currentMonth = new Date().getMonth() + 1
-    const currentYear = new Date().getFullYear()
-
-    // Find or create payroll run for this month
-    let payrollRun = await prisma.payrollRun.findFirst({
-      where: { companyId: dbUser.companyId, month: currentMonth, year: currentYear }
-    });
-
-    if (!payrollRun) {
-      payrollRun = await prisma.payrollRun.create({
-        data: {
-          companyId: dbUser.companyId,
-          month: currentMonth,
-          year: currentYear,
+          month,
+          year,
+          periodStart,
+          periodEnd,
+          salaryStructureId: structureId,
+          status: 'DRAFT',
           totalAmount: 0,
-          status: 'PROCESSING'
         }
       });
-    }
+      createdRunId = run.id;
 
-    // Check if payslip already exists for this employee in this run
-    const existingPayslip = await prisma.payslip.findUnique({
-      where: {
-        payrollRunId_employeeId: {
-          payrollRunId: payrollRun.id,
-          employeeId: employeeId
-        }
+      // Create draft payslips (zeroes)
+      for (const empId of employeeIds) {
+        await tx.payslip.create({
+          data: {
+            payrollRunId: run.id,
+            employeeId: empId,
+            basicSalary: 0,
+            allowances: 0,
+            deductions: 0,
+            netSalary: 0
+          }
+        });
       }
     });
 
-    if (existingPayslip) {
-      return { error: "Payroll has already been processed for this employee this month." }
-    }
-
-    // Create payslip
-    await prisma.payslip.create({
-      data: {
-        payrollRunId: payrollRun.id,
-        employeeId: employeeId,
-        basicSalary: amount,
-        allowances: 0,
-        deductions: 0,
-        netSalary: amount
-      }
-    });
-
-    // Update total amount in run manually to avoid Decimal increment errors
-    const newTotal = Number(payrollRun.totalAmount) + amount;
-    await prisma.payrollRun.update({
-      where: { id: payrollRun.id },
-      data: { totalAmount: newTotal }
-    });
-
-    revalidatePath('/dashboard/admin/payroll')
-    return { success: true }
+    revalidatePath('/dashboard/admin/payroll');
+    return { success: true, runId: createdRunId };
   } catch (error: any) {
-    console.error("Add Individual Payroll Error:", error)
-    return { error: error.message || "Failed to add individual payroll" }
+    console.error("Create Draft Payrun Error:", error);
+    return { error: error.message || "Failed to create payrun." };
   }
 }
+
+export async function computePayrun(runId: string) {
+  try {
+    const run = await prisma.payrollRun.findUnique({
+      where: { id: runId },
+      include: { payslips: true, salaryStructure: { include: { rules: { orderBy: { sequence: 'asc' } } } } }
+    });
+
+    if (!run || !run.salaryStructure) throw new Error("Run or structure not found");
+    if (run.status === 'PAID') throw new Error("Run is already paid");
+
+    const warnings: string[] = [];
+
+    await prisma.$transaction(async (tx) => {
+      for (const ps of run.payslips) {
+        // Clear old lines
+        await tx.payslipLine.deleteMany({ where: { payslipId: ps.id } });
+
+        const contract = await getApplicableContract(ps.employeeId, run.periodStart, run.periodEnd);
+        if (!contract) {
+          warnings.push(`Employee ${ps.employeeId} has no applicable contract.`);
+          continue;
+        }
+
+        const { totalWorkingDays, workedDays } = await calculateWorkedDays(ps.employeeId, run.periodStart, run.periodEnd);
+        if (workedDays === 0) {
+          warnings.push(`Employee ${ps.employeeId} has 0 worked days.`);
+        }
+
+        const computed = computePayslip(contract, run.salaryStructure, workedDays, totalWorkingDays);
+
+        await tx.payslip.update({
+          where: { id: ps.id },
+          data: {
+            contractId: contract.id,
+            structureId: run.salaryStructureId,
+            workedDays,
+            totalWorkingDays,
+            basicSalary: computed.basic,
+            allowances: computed.gross - computed.basic,
+            deductions: computed.deductions,
+            netSalary: computed.net,
+            lines: {
+              create: computed.lines.map(line => ({
+                code: line.code,
+                name: line.name,
+                category: line.category,
+                amount: line.amount,
+                sequence: run.salaryStructure!.rules.find(r => r.id === line.ruleId)?.sequence || 0
+              }))
+            }
+          }
+        });
+      }
+
+      await tx.payrollRun.update({
+        where: { id: runId },
+        data: { status: 'PROCESSING' }
+      });
+    });
+
+    revalidatePath(`/dashboard/admin/payroll/${runId}`);
+    return { success: true, warnings };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+
+export async function validatePayrun(runId: string) {
+  try {
+    await prisma.payrollRun.update({
+      where: { id: runId },
+      data: { status: 'APPROVED' }
+    });
+    revalidatePath(`/dashboard/admin/payroll/${runId}`);
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+
+export async function markPayrunPaid(runId: string) {
+  try {
+    const run = await prisma.payrollRun.findUnique({
+      where: { id: runId },
+      include: { payslips: true }
+    });
+    if (!run) throw new Error("Run not found");
+
+    const totalAmount = run.payslips.reduce((sum, ps) => sum + ps.netSalary, 0);
+
+    await prisma.payrollRun.update({
+      where: { id: runId },
+      data: { status: 'PAID', totalAmount }
+    });
+    revalidatePath(`/dashboard/admin/payroll/${runId}`);
+    revalidatePath('/dashboard/admin/payroll');
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+
+export async function deletePayrun(runId: string) {
+  try {
+    const run = await prisma.payrollRun.findUnique({ where: { id: runId } });
+    if (!run || run.status === 'PAID') throw new Error("Cannot delete run");
+    await prisma.payrollRun.delete({ where: { id: runId } });
+    revalidatePath('/dashboard/admin/payroll');
+    return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+

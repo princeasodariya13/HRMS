@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Plus, X, Loader2, UserPlus, Mail, Key } from "lucide-react";
 import { createEmployee } from "./actions";
 
-export function AddEmployeeModal() {
+export function AddEmployeeModal({ schedules = [] }: { schedules?: any[] }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [formData, setFormData] = useState({
@@ -12,7 +12,8 @@ export function AddEmployeeModal() {
     lastName: "",
     email: "",
     jobTitle: "",
-    baseSalary: ""
+    baseSalary: "",
+    workingScheduleId: ""
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -26,7 +27,8 @@ export function AddEmployeeModal() {
       const payload = {
         ...formData,
         baseSalary: formData.baseSalary ? parseFloat(formData.baseSalary) : undefined,
-        loginUrl: window.location.origin + '/login'
+        loginUrl: window.location.origin + '/login',
+        workingScheduleId: formData.workingScheduleId || undefined
       };
 
       const res = await createEmployee(payload);
@@ -34,7 +36,7 @@ export function AddEmployeeModal() {
         if (res.error === "DEMO_MODE_OFFLINE") {
           alert("The database is currently unavailable, so the employee could not be saved. Please verify the MongoDB connection and try again.");
           setIsOpen(false);
-          setFormData({ firstName: "", lastName: "", email: "", jobTitle: "", baseSalary: "" });
+          setFormData({ firstName: "", lastName: "", email: "", jobTitle: "", baseSalary: "", workingScheduleId: "" });
         } else {
           alert(res.error);
         }
@@ -45,7 +47,7 @@ export function AddEmployeeModal() {
            alert("Employee added successfully, but the invitation email could not be sent.");
         }
         setIsOpen(false);
-        setFormData({ firstName: "", lastName: "", email: "", jobTitle: "", baseSalary: "" });
+        setFormData({ firstName: "", lastName: "", email: "", jobTitle: "", baseSalary: "", workingScheduleId: "" });
       }
     });
   };
@@ -149,6 +151,20 @@ export function AddEmployeeModal() {
                   className="w-full px-4 py-2.5 bg-[#F8FAFC] dark:bg-[#1E293B] border border-[#E5E7EB] dark:border-[#1E293B] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#111827]/20 focus:border-[#111827] transition-all text-[#111827] dark:text-[#F3F4F6]"
                 />
                 <p className="text-xs text-[#9CA3AF] pt-1">Used for accurate payroll calculation. Can be added later.</p>
+              </div>
+
+              <div className="space-y-1">
+                <label className="block text-sm font-semibold text-[#111827] dark:text-[#F3F4F6]">Working Schedule <span className="text-[#9CA3AF] font-normal">(optional)</span></label>
+                <select
+                  value={formData.workingScheduleId}
+                  onChange={(e) => setFormData({...formData, workingScheduleId: e.target.value})}
+                  className="w-full px-4 py-2.5 bg-[#F8FAFC] dark:bg-[#1E293B] border border-[#E5E7EB] dark:border-[#1E293B] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#111827]/20 transition-all appearance-none cursor-pointer text-[#111827] dark:text-[#F3F4F6]"
+                >
+                  <option value="">No schedule selected</option>
+                  {schedules.map((sch: any) => (
+                    <option key={sch.id} value={sch.id}>{sch.name} ({sch.type})</option>
+                  ))}
+                </select>
               </div>
 
             </form>

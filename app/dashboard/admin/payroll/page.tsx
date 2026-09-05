@@ -47,6 +47,7 @@ async function PayrollData() {
   let isDemo = true;
 
   let employeesList: { id: string; name: string }[] = [];
+  let salaryStructures: { id: string; name: string }[] = [];
 
   try {
     dbUser = await prisma.user.findUnique({
@@ -57,6 +58,11 @@ async function PayrollData() {
     const companyId = dbUser?.companyId;
 
     if (companyId) {
+      salaryStructures = await prisma.salaryStructure.findMany({
+        where: { companyId },
+        select: { id: true, name: true }
+      });
+
       const dbEmployees = await prisma.employee.findMany({
         where: { companyId, status: 'ACTIVE' },
         select: { id: true, firstName: true, lastName: true }
@@ -75,7 +81,8 @@ async function PayrollData() {
         include: {
           payslips: {
             include: { employee: true }
-          }
+          },
+          salaryStructure: true
         }
       });
 
@@ -86,6 +93,7 @@ async function PayrollData() {
         return {
           id: run.id,
           monthString: date.toLocaleString('default', { month: 'long', year: 'numeric' }),
+          structureName: run.salaryStructure?.name || 'Unknown Structure',
           processedBy: 'Admin',
           totalAmountStr: new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(Number(run.totalAmount)),
           status: run.status,
@@ -116,5 +124,5 @@ async function PayrollData() {
     console.warn("Prisma Database connection failed in Payroll:. Next.js Dev overlay suppressed.");
   }
 
-  return <PayrollClient stats={stats} recentRuns={recentRuns} isDemo={isDemo} employees={employeesList} />;
+  return <PayrollClient stats={stats} recentRuns={recentRuns} isDemo={isDemo} employees={employeesList} salaryStructures={salaryStructures} />;
 }

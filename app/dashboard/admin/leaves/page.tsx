@@ -58,11 +58,24 @@ async function LeavesData() {
         orderBy: { createdAt: 'desc' }
       });
 
+      const activeAllocations = await prisma.leaveAllocation.findMany({
+        where: { employee: { companyId }, status: 'APPROVED' },
+      });
+
       leavesData = rawLeaves.map(leave => {
         const start = new Date(leave.startDate);
         const end = new Date(leave.endDate);
         const diffTime = Math.abs(end.getTime() - start.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // inclusive
+
+        // Find relevant allocation
+        const alloc = activeAllocations.find(a => 
+          a.employeeId === leave.employeeId && 
+          a.leaveTypeId === leave.leaveTypeId &&
+          new Date(a.dateFrom) <= start && 
+          new Date(a.dateTo) >= end
+        );
+        const balance = alloc ? `${alloc.remainingDays} days left` : 'No valid allocation';
 
         return {
           id: leave.id,
@@ -74,6 +87,7 @@ async function LeavesData() {
           days: diffDays,
           reason: leave.reason,
           status: leave.status,
+          balance: balance
         };
       });
 

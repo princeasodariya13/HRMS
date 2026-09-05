@@ -30,6 +30,7 @@ const ADMIN_NAV_ITEMS = [
   { name: "Schedules",    href: "/dashboard/admin/schedules",      icon: CalendarClock },
   { name: "Attendance",   href: "/dashboard/admin/attendance",     icon: CalendarCheck },
   { name: "Leaves",       href: "/dashboard/admin/leaves",         icon: CalendarOff },
+  { name: "Leave Alloc",  href: "/dashboard/admin/leave-allocations", icon: CalendarOff },
   { name: "Payroll",      href: "/dashboard/admin/payroll",        icon: Banknote },
   { name: "Recruitment",  href: "/dashboard/admin/recruitment",    icon: Briefcase },
   { name: "Documents",    href: "/dashboard/admin/documents",      icon: FileText },

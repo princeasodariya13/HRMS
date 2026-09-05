@@ -25,11 +25,13 @@ export default async function EmployeeLeavesPage() {
   let employee = null;
   let leaveRequests: any[] = [];
   let leaveTypes: any[] = [];
+  let leaveAllocations: any[] = [];
   let stats = {
     total: 0,
     approved: 0,
     pending: 0,
-    rejected: 0
+    rejected: 0,
+    remaining: 0
   };
   
   try {
@@ -59,7 +61,16 @@ export default async function EmployeeLeavesPage() {
         });
       }
       
-      stats.total = leaveTypes.reduce((acc, lt) => acc + lt.annualQuota, 0);
+      leaveAllocations = await prisma.leaveAllocation.findMany({
+        where: { 
+          employeeId: employee.id,
+          status: 'APPROVED'
+        },
+        include: { leaveType: true }
+      });
+
+      stats.total = leaveAllocations.reduce((acc, alloc) => acc + alloc.numberOfDays, 0);
+      stats.remaining = leaveAllocations.reduce((acc, alloc) => acc + alloc.remainingDays, 0);
 
       leaveRequests = await prisma.leaveRequest.findMany({
         where: { employeeId: employee.id },
@@ -79,8 +90,6 @@ export default async function EmployeeLeavesPage() {
     console.error("Database connection issue.", error);
   }
 
-  const remainingLeaves = Math.max(0, stats.total - stats.approved);
-
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       <div className="flex items-center justify-between">
@@ -92,11 +101,11 @@ export default async function EmployeeLeavesPage() {
         <div className="bg-white dark:bg-[#0F172A] rounded-3xl p-6 border border-[#E5E7EB] dark:border-[#1E293B] shadow-sm flex flex-col justify-between">
           <div className="flex items-center gap-3 text-gray-600 mb-2">
             <CalendarCheck className="w-5 h-5 text-emerald-600" />
-            <h3 className="font-medium">Available Balance</h3>
+            <h3 className="font-medium">Total Remaining</h3>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-4xl font-bold text-[#111827] dark:text-[#F3F4F6]">{remainingLeaves}</span>
-            <span className="text-sm font-medium text-gray-500">/ {stats.total} days</span>
+            <span className="text-4xl font-bold text-[#111827] dark:text-[#F3F4F6]">{stats.remaining}</span>
+            <span className="text-sm font-medium text-gray-500">/ {stats.total} days allocated</span>
           </div>
         </div>
 
@@ -133,6 +142,27 @@ export default async function EmployeeLeavesPage() {
           </div>
         </div>
       </div>
+
+      {/* Allocations Breakdown */}
+      {leaveAllocations.length > 0 && (
+        <div className="bg-white dark:bg-[#0F172A] rounded-3xl p-6 border border-[#E5E7EB] dark:border-[#1E293B] shadow-sm">
+          <h2 className="text-lg font-bold text-[#111827] dark:text-[#F3F4F6] mb-4">My Leave Balances</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {leaveAllocations.map(alloc => (
+              <div key={alloc.id} className="p-4 bg-[#F8FAFC] dark:bg-[#1E293B] rounded-xl border border-[#E5E7EB] dark:border-[#334155] flex justify-between items-center">
+                <div>
+                  <div className="font-semibold text-[#111827] dark:text-[#F3F4F6]">{alloc.leaveType?.name}</div>
+                  <div className="text-xs text-[#6B7280]">Expires: {new Date(alloc.dateTo).toLocaleDateString()}</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-xl font-bold text-[#111827] dark:text-[#F3F4F6]">{alloc.remainingDays}</div>
+                  <div className="text-xs text-[#6B7280]">remaining</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Apply Form */}

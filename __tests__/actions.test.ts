@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from "next-auth";
 import { createEmployee } from '@/app/dashboard/admin/employees/actions';
 import { updateLeaveStatus } from '@/app/dashboard/admin/leaves/actions';
-import { runPayrollAction } from '@/app/dashboard/admin/payroll/actions';
+
 
 // Mock dependencies
 vi.mock('@/lib/prisma', () => ({
@@ -143,49 +143,4 @@ describe('Server Actions Tests', () => {
     });
   });
 
-  describe('runPayrollAction', () => {
-    it('should run payroll for active employees based on salary', async () => {
-      (prisma.user.findUnique as any).mockResolvedValue({
-        id: 'admin-user-id',
-        companyId: 'company-1'
-      });
-
-      // Provide active employees
-      (prisma.employee.findMany as any).mockResolvedValue([
-        {
-          id: 'emp-1',
-          baseSalary: 50000,
-          allowancePercent: 20,
-          deductionPercent: 12
-        }
-      ]);
-
-      // Payroll not run yet
-      (prisma.payrollRun.findFirst as any).mockResolvedValue(null);
-
-      // Mocks for transaction
-      (prisma.payrollRun.create as any).mockResolvedValue({ id: 'run-1' });
-
-      const result = await runPayrollAction();
-
-      expect(result.success).toBe(true);
-      
-      // Calculate expected amount:
-      // Base: 50000
-      // Allowances: 50000 * 0.20 = 10000
-      // Deductions: 50000 * 0.12 = 6000
-      // Net: 54000
-      expect(prisma.payrollRun.create).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.objectContaining({
-          totalAmount: 54000,
-          status: 'PAID'
-        })
-      }));
-      expect(prisma.payslip.createMany).toHaveBeenCalledWith(expect.objectContaining({
-        data: expect.arrayContaining([
-          expect.objectContaining({ netSalary: 54000 })
-        ])
-      }));
-    });
-  });
 });

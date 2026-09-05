@@ -6,7 +6,27 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
-export default function EmployeesPage() {
+export default async function EmployeesPage() {
+  const session = await getServerSession(authOptions);
+  const user = session?.user;
+  let schedules: any[] = [];
+
+  if (user) {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { companyId: true, role: true }
+    });
+    const companyId = dbUser?.companyId;
+    const isSuperAdmin = dbUser?.role === "SUPER_ADMIN";
+    
+    if (companyId || isSuperAdmin) {
+      schedules = await prisma.workingSchedule.findMany({
+        where: isSuperAdmin ? {} : { companyId },
+        select: { id: true, name: true, type: true }
+      });
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -15,7 +35,7 @@ export default function EmployeesPage() {
           <p className="text-[#6B7280] dark:text-[#9CA3AF] text-sm">Manage your workforce, roles, and access.</p>
         </div>
         <div className="flex items-center gap-3">
-          <AddEmployeeModal />
+          <AddEmployeeModal schedules={schedules} />
         </div>
       </div>
 

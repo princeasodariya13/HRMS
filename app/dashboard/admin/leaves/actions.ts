@@ -18,14 +18,73 @@ export async function updateLeaveStatus(leaveId: string, status: 'APPROVED' | 'R
     const dbUser = await prisma.user.findUnique({ where: { id: user.id } })
     if (!dbUser) throw new Error("User not found")
 
-    const leave = await prisma.leaveRequest.update({
+    // Fetch the leave request first
+    const leaveRequest = await prisma.leaveRequest.findUnique({
       where: { 
         id: leaveId,
         companyId: dbUser.companyId
-      },
-      data: { status },
+      }
+    });
+
+    if (!leaveRequest) throw new Error("Leave request not found");
+    if (leaveRequest.status === status) return { success: true };
+
+    if (status === 'APPROVED' && leaveRequest.leaveTypeId) {
+      // Find a matching allocation
+      const allocation = await prisma.leaveAllocation.findFirst({
+        where: {
+          employeeId: leaveRequest.employeeId,
+          leaveTypeId: leaveRequest.leaveTypeId,
+          status: 'APPROVED',
+          dateFrom: { lte: leaveRequest.startDate },
+          dateTo: { gte: leaveRequest.endDate }
+        },
+        orderBy: { dateTo: 'asc' }
+      });
+
+      if (!allocation) {
+        return { error: "No valid approved leave allocation covers this date range." };
+      }
+      if (allocation.remainingDays < leaveRequest.totalDays) {
+        return { error: `Insufficient balance. Only ${allocation.remainingDays} days remaining.` };
+      }
+
+      await prisma.leaveAllocation.update({
+        where: { id: allocation.id },
+        data: {
+          takenDays: { increment: leaveRequest.totalDays },
+          remainingDays: { decrement: leaveRequest.totalDays }
+        }
+      });
+    } else if (leaveRequest.status === 'APPROVED' && status === 'REJECTED' && leaveRequest.leaveTypeId) {
+      // If it was already approved and is now being rejected, we need to refund the balance.
+      const allocation = await prisma.leaveAllocation.findFirst({
+        where: {
+          employeeId: leaveRequest.employeeId,
+          leaveTypeId: leaveRequest.leaveTypeId,
+          status: 'APPROVED',
+          dateFrom: { lte: leaveRequest.startDate },
+          dateTo: { gte: leaveRequest.endDate }
+        },
+        orderBy: { dateTo: 'asc' }
+      });
+
+      if (allocation) {
+        await prisma.leaveAllocation.update({
+          where: { id: allocation.id },
+          data: {
+            takenDays: { decrement: leaveRequest.totalDays },
+            remainingDays: { increment: leaveRequest.totalDays }
+          }
+        });
+      }
+    }
+
+    const leave = await prisma.leaveRequest.update({
+      where: { id: leaveId },
+      data: { status, approvedById: user.id },
       include: { employee: true }
-    })
+    });
 
     if (leave.employee?.userId) {
       try {

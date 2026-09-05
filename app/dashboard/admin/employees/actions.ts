@@ -241,6 +241,7 @@ export async function createEmployee(rawData: {
         joiningDate: new Date(),
         status: 'ACTIVE',
         baseSalary: data.baseSalary ?? null,
+        workingScheduleId: data.workingScheduleId || null,
       }
     })
 

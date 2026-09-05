@@ -14,6 +14,7 @@ export type LeaveRequestData = {
   days: number;
   reason: string;
   status: string;
+  balance?: string;
 };
 
 type LeavesClientProps = {
@@ -122,10 +123,15 @@ export function LeavesClient({ stats, leaves }: LeavesClientProps) {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-4 flex flex-col items-start gap-1">
                     <span className="bg-purple-50 text-purple-700 px-2.5 py-1 rounded-md text-xs font-semibold border border-purple-200">
                       {leave.type.replace('_', ' ')}
                     </span>
+                    {leave.balance && (
+                      <span className="text-[10px] text-gray-500 font-medium bg-gray-100 px-1.5 py-0.5 rounded">
+                        Bal: {leave.balance}
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     <div className="font-medium text-[#111827] dark:text-[#F3F4F6]">{leave.durationString}</div>
