@@ -32,6 +32,7 @@ const ADMIN_NAV_ITEMS = [
   { name: "Leaves",       href: "/dashboard/admin/leaves",         icon: CalendarOff },
   { name: "Leave Alloc",  href: "/dashboard/admin/leave-allocations", icon: CalendarOff },
   { name: "Payroll",      href: "/dashboard/admin/payroll",        icon: Banknote },
+  { name: "Payroll Dashboard", href: "/dashboard/admin/payroll-dashboard", icon: Banknote },
   { name: "Recruitment",  href: "/dashboard/admin/recruitment",    icon: Briefcase },
   { name: "Documents",    href: "/dashboard/admin/documents",      icon: FileText },
   { name: "Resume AI",    href: "/dashboard/admin/resume-analyzer",icon: FileText },
