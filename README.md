@@ -62,6 +62,12 @@ NexaHR AI is a comprehensive, modern, and AI-powered Enterprise Human Resource M
     npx prisma generate
     ```
 
+    To enable credentials login for an admin user, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in your local or Vercel environment, then run:
+    ```bash
+    npm run admin:setup
+    ```
+    The credentials login returns `401 Unauthorized` until that user has a password. Google login is independent of these credentials.
+
 5.  **Seed the Database (Optional):**
     If you want to populate your database with dummy data and a master admin account, run:
     ```bash
