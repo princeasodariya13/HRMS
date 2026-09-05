@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
-import { uploadToGoogleDrive } from "@/lib/googleDrive";
+import { uploadDocumentToCloudinary } from "@/lib/cloudinary";
 import type { DocumentType } from "@prisma/client";
 
 export async function uploadDocument(formData: FormData) {
@@ -53,12 +53,12 @@ export async function uploadDocument(formData: FormData) {
   const documentType = type as DocumentType;
 
   try {
-    const driveRes = await uploadToGoogleDrive(dbUser.companyId, file, title);
-    const fileUrl = driveRes.webViewLink || driveRes.webContentLink;
-
-    if (!fileUrl) {
-      return { error: "The file was uploaded but no view link was returned." };
-    }
+    const fileUrl = await uploadDocumentToCloudinary(
+      file,
+      dbUser.companyId,
+      dbUser.employee.id,
+      title,
+    );
 
     await prisma.document.create({
       data: {

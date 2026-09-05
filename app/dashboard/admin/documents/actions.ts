@@ -4,9 +4,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
-import { uploadToGoogleDrive } from "@/lib/googleDrive";
 import { logAudit } from "@/lib/auditLog";
 import type { DocumentType } from "@prisma/client";
+import { uploadDocumentToCloudinary } from "@/lib/cloudinary";
 
 export async function verifyDocument(documentId: string) {
   const session = await getServerSession(authOptions);
@@ -160,15 +160,7 @@ export async function uploadAdminDocument(formData: FormData) {
       }
     }
 
-    let fileUrl = "";
-
-    try {
-      const driveRes = await uploadToGoogleDrive(dbUser.companyId, file, title);
-      fileUrl = driveRes.webViewLink || driveRes.webContentLink || "";
-    } catch (e: any) {
-      console.warn("Google Drive upload failed. Falling back to placeholder.", e);
-      fileUrl = "https://placeholder.url/doc";
-    }
+    const fileUrl = await uploadDocumentToCloudinary(file, dbUser.companyId, employeeId, title);
 
     const createdDoc = await prisma.document.create({
       data: {
