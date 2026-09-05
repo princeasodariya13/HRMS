@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { uploadToGoogleDrive } from "@/lib/googleDrive";
 import { logAudit } from "@/lib/auditLog";
+import type { DocumentType } from "@prisma/client";
 
 export async function verifyDocument(documentId: string) {
   const session = await getServerSession(authOptions);
@@ -106,10 +107,11 @@ export async function uploadAdminDocument(formData: FormData) {
     }
 
     const title = formData.get("title") as string;
-    const type = formData.get("type") as any;
+    const submittedType = formData.get("type") as string;
     const file = formData.get("file") as File;
+    const type = submittedType === "ID_PROOF" ? "IDENTITY" : submittedType;
 
-    if (!title || !type || !file) {
+    if (!title?.trim() || !type || !(file instanceof File) || file.size === 0) {
       throw new Error("Missing required fields");
     }
 
@@ -121,6 +123,12 @@ export async function uploadAdminDocument(formData: FormData) {
     if (!allowedTypes.includes(file.type)) {
       throw new Error("Invalid file type. Only PDF, images, and Word documents are allowed.");
     }
+
+    const allowedDocumentTypes = ['IDENTITY', 'CERTIFICATE', 'CONTRACT', 'POLICY', 'OTHER'];
+    if (!allowedDocumentTypes.includes(type)) {
+      throw new Error("Invalid document type");
+    }
+    const documentType = type as DocumentType;
 
     // --- Resolve a valid employeeId ---
     // The Document model requires a valid employeeId. If admin has no employee record,
@@ -166,7 +174,7 @@ export async function uploadAdminDocument(formData: FormData) {
       data: {
         employeeId: employeeId,
         title: title,
-        type: type,
+        type: documentType,
         fileUrl: fileUrl,
         isVerified: true,
       }

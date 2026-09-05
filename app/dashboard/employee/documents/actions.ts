@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
+import { uploadToGoogleDrive } from "@/lib/googleDrive";
+import type { DocumentType } from "@prisma/client";
 
 export async function uploadDocument(formData: FormData) {
   const session = await getServerSession(authOptions);
@@ -20,25 +22,50 @@ export async function uploadDocument(formData: FormData) {
     throw new Error("Employee not found");
   }
 
-  const title = formData.get("title") as string;
-  const type = formData.get("type") as any;
+  const title = (formData.get("title") as string)?.trim();
+  const type = formData.get("type") as string;
   const file = formData.get("file") as File;
 
-  if (!title || !type || !file) {
+  if (!title || !type || !(file instanceof File) || file.size === 0) {
     return { error: "Missing required fields" };
   }
 
-  // For this implementation, we will simulate the upload by creating a record with a dummy URL
-  // representing the securely stored file.
-  const dummyFileUrl = `/secure-storage/${dbUser.companyId}/${dbUser.employee.id}/${file.name}`;
+  if (file.size > 5 * 1024 * 1024) {
+    return { error: "File size must be less than 5MB" };
+  }
+
+  const allowedTypes = [
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
+
+  if (!allowedTypes.includes(file.type)) {
+    return { error: "Invalid file type. Use PDF, JPG, PNG, DOC, or DOCX." };
+  }
+
+  const allowedDocumentTypes = ["IDENTITY", "CERTIFICATE", "CONTRACT", "POLICY", "OTHER"];
+  if (!allowedDocumentTypes.includes(type)) {
+    return { error: "Invalid document type" };
+  }
+  const documentType = type as DocumentType;
 
   try {
+    const driveRes = await uploadToGoogleDrive(dbUser.companyId, file, title);
+    const fileUrl = driveRes.webViewLink || driveRes.webContentLink;
+
+    if (!fileUrl) {
+      return { error: "The file was uploaded but no view link was returned." };
+    }
+
     await prisma.document.create({
       data: {
         employeeId: dbUser.employee.id,
         title: title,
-        type: type,
-        fileUrl: dummyFileUrl,
+        type: documentType,
+        fileUrl,
         isVerified: false
       }
     });

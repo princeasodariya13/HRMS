@@ -59,7 +59,7 @@ export function UploadDocumentModal() {
                 <select required name="type" className="w-full px-4 py-2 rounded-xl border border-[#E5E7EB] dark:border-[#1E293B] bg-[#F8FAFC] dark:bg-[#1E293B] focus:bg-white dark:focus:bg-[#0F172A] focus:outline-none focus:ring-2 focus:ring-[#111827]/20 dark:focus:ring-[#F3F4F6]/20 transition-all text-sm dark:text-white">
                   <option value="POLICY">Company Policy</option>
                   <option value="CONTRACT">Employee Contract</option>
-                  <option value="ID_PROOF">ID Proof</option>
+                  <option value="IDENTITY">ID Proof</option>
                   <option value="CERTIFICATE">Certificate</option>
                   <option value="OTHER">Other</option>
                 </select>

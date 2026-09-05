@@ -7,7 +7,13 @@ export function RealtimeProvider({ companyId }: { companyId?: string }) {
     if (!companyId) return;
 
     // Connect to our MongoDB-backed Server-Sent Events endpoint
-    const eventSource = new EventSource('/api/realtime/notifications');
+    let eventSource: EventSource | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+    let stopped = false;
+
+    const connect = () => {
+      if (stopped) return;
+      eventSource = new EventSource('/api/realtime/notifications');
     
     eventSource.onmessage = (event) => {
       try {
@@ -21,9 +27,19 @@ export function RealtimeProvider({ companyId }: { companyId?: string }) {
       }
     };
 
+      eventSource.onerror = () => {
+        eventSource?.close();
+        if (!stopped) reconnectTimer = setTimeout(connect, 1000);
+      };
+    };
+
+    connect();
+
     // Cleanup subscription on unmount to prevent memory leaks and duplicate listeners
     return () => {
-      eventSource.close();
+      stopped = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      eventSource?.close();
     };
   }, [companyId]);
   

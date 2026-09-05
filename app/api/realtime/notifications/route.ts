@@ -6,6 +6,8 @@ import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
 const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
 const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -41,6 +43,7 @@ export async function GET(req: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       let isClosed = false;
+      const startedAt = Date.now();
 
       // Handle client disconnect to prevent memory leaks
       req.signal.addEventListener("abort", () => {
@@ -50,7 +53,7 @@ export async function GET(req: NextRequest) {
       // Track the newest notification we've sent
       let lastNotifDate = new Date();
 
-      while (!isClosed) {
+      while (!isClosed && Date.now() - startedAt < 55_000) {
         try {
           // Poll MongoDB for notifications created after our last check
           const newNotifs = await prisma.notification.findMany({
@@ -67,14 +70,19 @@ export async function GET(req: NextRequest) {
             controller.enqueue(
               encoder.encode(`data: ${JSON.stringify(newNotifs)}\n\n`)
             );
+          } else {
+            controller.enqueue(encoder.encode(`: heartbeat\n\n`));
           }
         } catch (e) {
           console.error("[SSE] Error polling notifications:", e);
+          if (!isClosed) controller.enqueue(encoder.encode(`: heartbeat\n\n`));
         }
 
         // Wait 3 seconds before polling again to avoid DB overload
         await new Promise((resolve) => setTimeout(resolve, 3000));
       }
+
+      if (!isClosed) controller.close();
     },
   });
 
