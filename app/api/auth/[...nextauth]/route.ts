@@ -5,8 +5,31 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
+const basePrismaAdapter = PrismaAdapter(prisma) as any;
+const prismaAdapter = {
+  ...basePrismaAdapter,
+  async createUser(profile: any) {
+    const company = await prisma.company.create({
+      data: {
+        name: `${profile.name ?? profile.email}'s Company`,
+        website: profile.email?.split("@")[1] ?? "company.com",
+      },
+    });
+
+    return prisma.user.create({
+      data: {
+        email: profile.email,
+        emailVerified: profile.emailVerified ?? null,
+        image: profile.image ?? null,
+        companyId: company.id,
+        role: "SUPER_ADMIN",
+      },
+    });
+  },
+};
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as any,
+  adapter: prismaAdapter,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
