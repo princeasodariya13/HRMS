@@ -3,12 +3,13 @@
 import { useState, useTransition } from "react";
 import { ArrowLeft, Calculator, CheckCircle2, Lock, FileOutput, Loader2, AlertTriangle, Send } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { computePayrun, validatePayrun, markPayrunPaid } from "../actions";
+import { computePayrun, validatePayrun, markPayrunPaid, sendPayrunPayslips } from "../actions";
 
 export function PayrunDetailClient({ run }: { run: any }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [warnings, setWarnings] = useState<string[]>([]);
+  const [sendResult, setSendResult] = useState<string | null>(null);
 
   const handleCompute = () => {
     startTransition(async () => {
@@ -40,6 +41,15 @@ export function PayrunDetailClient({ run }: { run: any }) {
     startTransition(async () => {
       const res = await markPayrunPaid(run.id);
       if (res.error) alert(res.error);
+    });
+  };
+
+  const handleSendPayslips = () => {
+    setSendResult(null);
+    startTransition(async () => {
+      const res = await sendPayrunPayslips(run.id);
+      if (res.error) alert(res.error);
+      else setSendResult(`${res.sent} sent, ${res.failed} failed`);
     });
   };
 
@@ -96,7 +106,8 @@ export function PayrunDetailClient({ run }: { run: any }) {
           {run.status === 'PAID' && (
             <button 
               className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm rounded-xl px-4 py-2.5 text-sm font-semibold transition-all flex items-center justify-center gap-2"
-              onClick={() => alert("Payslips sent successfully! (Simulated)")}
+              onClick={handleSendPayslips}
+              disabled={isPending}
             >
               <Send className="w-4 h-4" />
               Send Payslips
@@ -104,6 +115,8 @@ export function PayrunDetailClient({ run }: { run: any }) {
           )}
         </div>
       </div>
+
+      {sendResult && <p className="text-sm font-semibold text-emerald-700">{sendResult}</p>}
 
       {warnings.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-4">

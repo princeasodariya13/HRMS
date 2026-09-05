@@ -7,6 +7,8 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { PayrollStatus } from '@prisma/client'
 import { logAudit } from '@/lib/auditLog';
 import { getApplicableContract, calculateWorkedDays, computePayslip } from '@/lib/payroll/engine';
+import { renderPayslipPdf } from '@/lib/payroll/payslip-pdf';
+import { sendPayslipEmail } from '@/lib/mail';
 
 export async function getEligibleEmployees(month: number, year: number, structureId: string) {
   const session = await getServerSession(authOptions);
@@ -193,6 +195,39 @@ export async function markPayrunPaid(runId: string) {
     return { success: true };
   } catch (error: any) {
     return { error: error.message };
+  }
+}
+
+export async function sendPayrunPayslips(runId: string) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new Error('Unauthorized');
+    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+    if (!user || user.role === 'EMPLOYEE') throw new Error('Only payroll administrators can send payslips.');
+
+    const run = await prisma.payrollRun.findFirst({
+      where: { id: runId, companyId: user.companyId },
+      include: { payslips: { include: { employee: true, lines: { orderBy: { sequence: 'asc' } } } } }
+    });
+    if (!run) throw new Error('Payrun not found');
+    if (run.status !== 'PAID') throw new Error('Only paid payruns can be sent.');
+
+    let sent = 0;
+    let failed = 0;
+    for (const payslip of run.payslips) {
+      if (!payslip.employee.workEmail) { failed++; continue; }
+      const pdf = await renderPayslipPdf({ ...payslip, payrollRun: run });
+      const delivered = await sendPayslipEmail(
+        payslip.employee.workEmail,
+        `${payslip.employee.firstName} ${payslip.employee.lastName}`,
+        `${new Date(run.year, run.month - 1).toLocaleString('en-IN', { month: 'long', year: 'numeric' })}`,
+        pdf
+      );
+      if (delivered) sent++; else failed++;
+    }
+    return { success: true, sent, failed, total: run.payslips.length };
+  } catch (error: any) {
+    return { error: error.message || 'Failed to send payslips.' };
   }
 }
 

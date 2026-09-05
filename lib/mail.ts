@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import type { SendMailOptions } from 'nodemailer';
 
 export const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
@@ -9,6 +10,24 @@ export const transporter = nodemailer.createTransport({
     pass: process.env.SMTP_PASS,
   },
 });
+
+export async function sendPayslipEmail(toEmail: string, employeeName: string, period: string, pdf: Buffer) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) return false;
+  try {
+    const options: SendMailOptions = {
+      from: `"${process.env.SMTP_FROM_NAME || 'NexaHR AI'}" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+      to: toEmail,
+      subject: `Payslip for ${period}`,
+      html: `<p>Hello ${employeeName},</p><p>Your payslip for <strong>${period}</strong> is attached.</p><p>Regards,<br>NexaHR</p>`,
+      attachments: [{ filename: `payslip-${period.replace(/\s+/g, '-')}.pdf`, content: pdf, contentType: 'application/pdf' }]
+    };
+    await transporter.sendMail(options);
+    return true;
+  } catch (error) {
+    console.error('Error sending payslip email:', error);
+    return false;
+  }
+}
 
 export async function sendEmployeeWelcomeEmail(
   toEmail: string,

@@ -159,10 +159,10 @@ export default async function EmployeePayrollPage() {
                         <span className="font-bold text-gray-900 text-base">₹{net.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white dark:text-[#111827] bg-slate-900 rounded-xl hover:bg-slate-800 transition-colors shadow-sm focus:ring-2 focus:ring-slate-900/20">
+                        <a href={`/api/payroll/payslips/${slip.id}/pdf`} className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white dark:text-[#111827] bg-slate-900 rounded-xl hover:bg-slate-800 transition-colors shadow-sm focus:ring-2 focus:ring-slate-900/20">
                           <Download className="w-4 h-4" />
                           Download PDF
-                        </button>
+                        </a>
                       </td>
                     </tr>
                   );
