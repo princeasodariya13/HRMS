@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { MoreHorizontal, Edit2, UserX, UserCheck, Shield, X, Loader2, Search, Filter, Trash2 } from "lucide-react";
+import { MoreHorizontal, Edit2, UserX, UserCheck, Shield, X, Loader2, Search, Filter, Trash2, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 import { updateEmployeeRole, updateEmployeeStatus, deleteEmployee } from "@/app/dashboard/admin/employees/actions";
 
 
@@ -14,6 +15,7 @@ interface EmployeeData {
   role: string;
   department: string;
   status: string;
+  contractsCount?: number;
 }
 
 export function EmployeeTable({ employees = [] }: { employees?: EmployeeData[] }) {
@@ -228,6 +230,19 @@ export function EmployeeTable({ employees = [] }: { employees?: EmployeeData[] }
 
                     {activeMenu === emp.id && (
                       <div className="absolute right-8 top-10 w-48 bg-white dark:bg-[#0F172A] border border-[#E5E7EB] dark:border-[#1E293B] shadow-xl rounded-xl py-1 z-10 flex flex-col">
+                        <Link 
+                          href={`/dashboard/admin/contracts?employee=${emp.id}`}
+                          className="flex items-center justify-between px-4 py-2 text-sm text-[#475569] hover:bg-[#F8FAFC] dark:hover:bg-[#1E293B]/50 dark:bg-[#1E293B] hover:text-[#111827] dark:text-[#F3F4F6] text-left"
+                        >
+                          <div className="flex items-center gap-2">
+                            <FileText className="w-4 h-4" /> Contracts
+                          </div>
+                          {emp.contractsCount !== undefined && (
+                            <span className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 font-bold px-1.5 py-0.5 rounded-md">
+                              {emp.contractsCount}
+                            </span>
+                          )}
+                        </Link>
                         <button className="flex items-center gap-2 px-4 py-2 text-sm text-[#475569] hover:bg-[#F8FAFC] dark:hover:bg-[#1E293B]/50 dark:bg-[#1E293B] hover:text-[#111827] dark:text-[#F3F4F6] text-left">
                           <Edit2 className="w-4 h-4" /> Edit Profile
                         </button>

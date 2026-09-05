@@ -121,6 +121,7 @@ const createEmployeeSchema = z.object({
   jobTitle: z.string().min(1, "Job title is required").max(100),
   baseSalary: z.number().min(0).optional(),
   loginUrl: z.string().url().optional(),
+  workingScheduleId: z.string().optional(),
 });
 
 export async function createEmployee(rawData: {
@@ -130,6 +131,7 @@ export async function createEmployee(rawData: {
   jobTitle: string;
   baseSalary?: number;
   loginUrl?: string;
+  workingScheduleId?: string;
 }) {
   try {
     const parsed = createEmployeeSchema.safeParse(rawData);

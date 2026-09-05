@@ -8,6 +8,7 @@ import {
   Users, 
   CalendarCheck, 
   CalendarOff, 
+  CalendarClock,
   Banknote, 
   Briefcase, 
   FileText, 
@@ -17,13 +18,16 @@ import {
   User,
   Target,
   Shield,
-  ShieldCheck
+  ShieldCheck,
+  FileSignature
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ADMIN_NAV_ITEMS = [
   { name: "Overview",     href: "/dashboard/admin",                icon: LayoutDashboard },
   { name: "Employees",    href: "/dashboard/admin/employees",      icon: Users },
+  { name: "Contracts",    href: "/dashboard/admin/contracts",      icon: FileSignature },
+  { name: "Schedules",    href: "/dashboard/admin/schedules",      icon: CalendarClock },
   { name: "Attendance",   href: "/dashboard/admin/attendance",     icon: CalendarCheck },
   { name: "Leaves",       href: "/dashboard/admin/leaves",         icon: CalendarOff },
   { name: "Payroll",      href: "/dashboard/admin/payroll",        icon: Banknote },

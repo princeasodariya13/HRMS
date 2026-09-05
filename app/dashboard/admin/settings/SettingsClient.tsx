@@ -1,16 +1,17 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { Building, User, Moon, Sun, Save, CheckCircle2, AlertCircle } from "lucide-react";
+import { Building, User, Moon, Sun, Save, CheckCircle2, AlertCircle, Banknote, ChevronDown, ChevronRight } from "lucide-react";
 import { updateCompanySettings, updateAdminProfile } from "./actions";
 
 type AdminSettingsProps = {
   company: { name: string; website: string | null } | null;
   employee: { firstName: string; lastName: string } | null;
   leaveTypes: any[];
+  salaryStructures?: any[];
 };
 
-export function SettingsClient({ company, employee, leaveTypes }: AdminSettingsProps) {
+export function SettingsClient({ company, employee, leaveTypes, salaryStructures = [] }: AdminSettingsProps) {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [isPendingCompany, startTransitionCompany] = useTransition();
   const [isPendingProfile, startTransitionProfile] = useTransition();
@@ -21,6 +22,7 @@ export function SettingsClient({ company, employee, leaveTypes }: AdminSettingsP
   const [lastName, setLastName] = useState(employee?.lastName || "");
 
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [expandedStructure, setExpandedStructure] = useState<string | null>(null);
 
   useEffect(() => {
     const isDark = document.documentElement.classList.contains("dark");
@@ -276,6 +278,85 @@ export function SettingsClient({ company, employee, leaveTypes }: AdminSettingsP
           </label>
           <button type="submit" className="bg-[#111827] text-white px-4 py-2 rounded-lg text-sm">Add</button>
         </form>
+      </div>
+
+      {/* Payroll Config */}
+      <div className="bg-white dark:bg-[#0F172A] rounded-2xl border border-[#E5E7EB] dark:border-[#1E293B] shadow-sm p-6 space-y-4 transition-all">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+            <Banknote className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-[#111827] dark:text-[#F3F4F6]">Payroll Config</h3>
+            <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">Manage Salary Structures and Rules.</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {salaryStructures.length === 0 ? (
+            <div className="text-center py-6 text-sm text-gray-500">
+              No salary structures defined yet. Run the seed script to populate defaults.
+            </div>
+          ) : (
+            salaryStructures.map((structure: any) => (
+              <div key={structure.id} className="border border-[#E5E7EB] dark:border-[#334155] rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setExpandedStructure(expandedStructure === structure.id ? null : structure.id)}
+                  className="w-full flex items-center justify-between p-4 bg-[#F8FAFC] dark:bg-[#1E293B] hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    {expandedStructure === structure.id ? <ChevronDown className="w-4 h-4 text-gray-500" /> : <ChevronRight className="w-4 h-4 text-gray-500" />}
+                    <span className="font-semibold text-sm text-[#111827] dark:text-[#F3F4F6]">{structure.name}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${structure.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                      {structure.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  <span className="text-xs text-gray-500">{structure.rules?.length || 0} Rules</span>
+                </button>
+
+                {expandedStructure === structure.id && (
+                  <div className="p-4 bg-white dark:bg-[#0F172A]">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-left">
+                        <thead className="bg-[#F8FAFC] dark:bg-[#1E293B] text-[#6B7280]">
+                          <tr>
+                            <th className="px-4 py-3 font-semibold rounded-tl-lg">Seq</th>
+                            <th className="px-4 py-3 font-semibold">Code (Name)</th>
+                            <th className="px-4 py-3 font-semibold">Category</th>
+                            <th className="px-4 py-3 font-semibold">Type</th>
+                            <th className="px-4 py-3 font-semibold rounded-tr-lg">Value</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#E5E7EB] dark:divide-[#1E293B]">
+                          {structure.rules?.map((rule: any) => (
+                            <tr key={rule.id}>
+                              <td className="px-4 py-3 font-medium text-gray-500">{rule.sequence}</td>
+                              <td className="px-4 py-3">
+                                <div className="font-medium text-[#111827] dark:text-[#F3F4F6]">{rule.code}</div>
+                                <div className="text-xs text-gray-500">{rule.name}</div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="text-[10px] px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
+                                  {rule.category}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-xs">{rule.amountType}</td>
+                              <td className="px-4 py-3 text-xs font-mono">
+                                {rule.amountType === 'FIXED' ? `₹${rule.amount || 0}` : 
+                                 rule.amountType === 'PERCENTAGE' ? `${rule.percentage || 0}%` : 
+                                 rule.formula || '-'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
     </div>

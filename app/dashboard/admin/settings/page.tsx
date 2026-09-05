@@ -15,13 +15,23 @@ export default async function AdminSettingsPage() {
   let company = null;
   let employee = null;
   let leaveTypes: any[] = [];
+  let salaryStructures: any[] = [];
 
   try {
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },
       include: {
         company: {
-          include: { leaveTypes: true }
+          include: { 
+            leaveTypes: true,
+            salaryStructures: {
+              include: {
+                rules: {
+                  orderBy: { sequence: 'asc' }
+                }
+              }
+            }
+          }
         },
         employee: true
       }
@@ -41,12 +51,15 @@ export default async function AdminSettingsPage() {
       if (dbUser.company?.leaveTypes) {
         leaveTypes = dbUser.company.leaveTypes;
       }
+      if (dbUser.company?.salaryStructures) {
+        salaryStructures = dbUser.company.salaryStructures;
+      }
     }
   } catch (err) {
     console.error("Prisma Database fetching failed in Admin Settings:", err);
   }
 
   return (
-    <SettingsClient company={company} employee={employee} leaveTypes={leaveTypes} />
+    <SettingsClient company={company} employee={employee} leaveTypes={leaveTypes} salaryStructures={salaryStructures} />
   );
 }

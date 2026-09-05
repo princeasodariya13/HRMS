@@ -80,7 +80,7 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
         }
-
+      
         return user as any;
       },
     }),

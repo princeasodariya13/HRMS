@@ -64,18 +64,30 @@ export async function GET(req: NextRequest) {
             orderBy: { createdAt: "asc" },
           });
 
-          if (newNotifs.length > 0) {
-            lastNotifDate = newNotifs[newNotifs.length - 1].createdAt;
-            // Push the new records to the client
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify(newNotifs)}\n\n`)
-            );
-          } else {
-            controller.enqueue(encoder.encode(`: heartbeat\n\n`));
+          if (!isClosed) {
+            if (newNotifs.length > 0) {
+              lastNotifDate = newNotifs[newNotifs.length - 1].createdAt;
+              // Push the new records to the client
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify(newNotifs)}\n\n`)
+              );
+            } else {
+              controller.enqueue(encoder.encode(`: heartbeat\n\n`));
+            }
           }
-        } catch (e) {
-          console.error("[SSE] Error polling notifications:", e);
-          if (!isClosed) controller.enqueue(encoder.encode(`: heartbeat\n\n`));
+        } catch (e: any) {
+          if (e.message?.includes('Controller is already closed') || e.code === 'ERR_INVALID_STATE') {
+             isClosed = true;
+          } else {
+             console.error("[SSE] Error polling notifications:", e);
+          }
+          if (!isClosed) {
+            try {
+              controller.enqueue(encoder.encode(`: heartbeat\n\n`));
+            } catch (err) {
+              isClosed = true;
+            }
+          }
         }
 
         // Wait 3 seconds before polling again to avoid DB overload

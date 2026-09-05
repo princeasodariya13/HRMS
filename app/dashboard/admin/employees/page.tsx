@@ -55,7 +55,10 @@ async function EmployeesData() {
     if (companyId || isSuperAdmin) {
       const rawEmployees = await prisma.employee.findMany({
         where: isSuperAdmin ? {} : { companyId },
-        include: { department: true },
+        include: { 
+          department: true,
+          _count: { select: { contracts: true } }
+        },
         orderBy: { createdAt: 'desc' }
       });
 
@@ -67,6 +70,7 @@ async function EmployeesData() {
         role: emp.designation || 'Employee',
         department: emp.department?.name || 'General',
         status: emp.status,
+        contractsCount: emp._count.contracts,
       }));
     }
   } catch (error) {
