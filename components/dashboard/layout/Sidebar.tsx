@@ -19,7 +19,8 @@ import {
   Target,
   Shield,
   ShieldCheck,
-  FileSignature
+  FileSignature,
+  BarChart3
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,7 +33,8 @@ const ADMIN_NAV_ITEMS = [
   { name: "Leaves",       href: "/dashboard/admin/leaves",         icon: CalendarOff },
   { name: "Leave Alloc",  href: "/dashboard/admin/leave-allocations", icon: CalendarOff },
   { name: "Payroll",      href: "/dashboard/admin/payroll",        icon: Banknote },
-  { name: "Payroll Dashboard", href: "/dashboard/admin/payroll-dashboard", icon: Banknote },
+  { name: "Pay Dashboard", href: "/dashboard/admin/payroll-dashboard", icon: Banknote },
+  { name: "Analytics",    href: "/dashboard/admin/analytics",      icon: BarChart3 },
   { name: "Recruitment",  href: "/dashboard/admin/recruitment",    icon: Briefcase },
   { name: "Documents",    href: "/dashboard/admin/documents",      icon: FileText },
   { name: "Resume AI",    href: "/dashboard/admin/resume-analyzer",icon: FileText },
@@ -45,6 +47,7 @@ const AUDIT_NAV_ITEM = {
   href: "/dashboard/admin/audit-logs",
   icon: ShieldCheck,
 };
+
 
 const EMPLOYEE_NAV_ITEMS = [
   { name: "My Dashboard", href: "/dashboard/employee", icon: LayoutDashboard },
@@ -63,8 +66,8 @@ export function Sidebar({ role = "SUPER_ADMIN" }: { role?: string }) {
 
   const navItems = role === "EMPLOYEE" ? EMPLOYEE_NAV_ITEMS : [
     ...ADMIN_NAV_ITEMS,
-    // Audit Logs only visible to privileged admin roles
-    ...(role === "SUPER_ADMIN" || role === "COMPANY_ADMIN" ? [AUDIT_NAV_ITEM] : []),
+    // Audit Logs visible to privileged admin roles
+    ...(['SUPER_ADMIN', 'COMPANY_ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER'].includes(role) ? [AUDIT_NAV_ITEM] : []),
   ];
 
   return (

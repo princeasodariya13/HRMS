@@ -74,7 +74,7 @@ async function EmployeesData() {
     // Fetch employees
     if (companyId || isSuperAdmin) {
       const rawEmployees = await prisma.employee.findMany({
-        where: isSuperAdmin ? {} : { companyId },
+        where: isSuperAdmin ? { deletedAt: null } : { companyId, deletedAt: null },
         include: { 
           department: true,
           _count: { select: { contracts: true } }

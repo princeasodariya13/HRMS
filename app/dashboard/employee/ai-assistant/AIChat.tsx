@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Bot, Send, User, Sparkles } from "lucide-react";
 
-import { processChatQuery } from "./actions";
+import { sendEmployeeMessageToAI } from "./actions";
 
 type Message = {
   id: string;
@@ -14,7 +14,7 @@ type Message = {
 const INITIAL_MESSAGE: Message = {
   id: "1",
   role: "assistant",
-  content: "Hi there! I am Nexa, your AI HR Assistant. I can help you check your leave balance, explain company policies, or provide details about your payroll. How can I help you today?"
+  content: "Hi! I'm Nexa, your AI HR Assistant powered by Gemini. I can help you check your leave balance, understand your payslip, view your attendance, or answer HR questions. How can I help you today?",
 };
 
 export function AIChat() {
@@ -45,9 +45,9 @@ export function AIChat() {
     setInput("");
     setIsTyping(true);
 
-    // Call the Server Action which queries Prisma directly
+    // Call the Server Action which uses Gemini AI
     try {
-      const responseText = await processChatQuery(userMessage.content);
+      const responseText = await sendEmployeeMessageToAI(userMessage.content);
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),

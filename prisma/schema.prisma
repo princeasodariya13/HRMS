@@ -76,6 +76,12 @@ enum LeaveStatus {
   CANCELLED
 }
 
+enum LeaveApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum PayrollStatus {
   DRAFT
   PROCESSING
@@ -125,6 +131,10 @@ enum AIActionType {
   CANDIDATE_MATCH
   DOCUMENT_GENERATION
   POLICY_SEARCH
+  ATTENDANCE_INSIGHT
+  PAYSLIP_EXPLAIN
+  LEAVE_ANOMALY
+  EMPLOYEE_SUMMARY
 }
 
 enum GoalStatus {
@@ -286,6 +296,7 @@ model Employee {
   companyId    String
   userId       String  @unique
   departmentId String?
+  managerId    String? // Direct manager for leave approval chain
 
   employeeCode String
   firstName    String
@@ -367,8 +378,12 @@ model LeaveRequest {
   endDate      DateTime
   totalDays    Float
   reason       String
-  status       LeaveStatus @default(PENDING)
-  approvedById String?
+  status       LeaveStatus           @default(PENDING)
+  approvedById String? // Manager who approved
+  approvedByHrId String? // HR who gave final approval
+  managerApprovalStatus LeaveApprovalStatus @default(PENDING)
+  hrApprovalStatus      LeaveApprovalStatus @default(PENDING)
+  rejectionReason String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

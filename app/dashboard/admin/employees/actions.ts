@@ -300,26 +300,24 @@ export async function deleteEmployee(employeeId: string) {
     const dbUser = await prisma.user.findUnique({ where: { id: user.id } })
     if (!dbUser) throw new Error("User not found in database")
 
-    const employeeToDelete = await prisma.employee.findUnique({
-      where: { id: employeeId }
+    const employeeToDelete = await prisma.employee.findFirst({
+      where: { id: employeeId, deletedAt: null }
     })
 
     const isSuperAdmin = dbUser.role === "SUPER_ADMIN";
 
     if (!employeeToDelete || (!isSuperAdmin && employeeToDelete.companyId !== dbUser.companyId)) {
-      return { error: "Employee not found or you don't have permission to delete them." }
+      return { error: "Employee not found or you don't have permission." }
     }
 
-
-    // Manually delete related records in a fast transaction to avoid timeouts
-    await prisma.$transaction([
-      prisma.payslip.deleteMany({ where: { employeeId: employeeId } }),
-      prisma.attendance.deleteMany({ where: { employeeId: employeeId } }),
-      prisma.leaveRequest.deleteMany({ where: { employeeId: employeeId } }),
-      prisma.document.deleteMany({ where: { employeeId: employeeId } }),
-      prisma.goal.deleteMany({ where: { employeeId: employeeId } }),
-      prisma.employee.delete({ where: { id: employeeId } })
-    ]);
+    // Soft delete: preserve all related data, just mark as deleted/terminated
+    await prisma.employee.update({
+      where: { id: employeeId },
+      data: {
+        deletedAt: new Date(),
+        status: 'TERMINATED',
+      }
+    });
 
     await logAudit({
       companyId: dbUser.companyId,
@@ -333,18 +331,18 @@ export async function deleteEmployee(employeeId: string) {
         employeeCode: employeeToDelete.employeeCode,
         status: employeeToDelete.status,
       },
+      newData: { deletedAt: new Date().toISOString(), status: 'TERMINATED' },
     });
 
+    // Deactivate the user login so they can't sign in
     if (employeeToDelete.userId) {
       try {
-        // Delete associated user, accounts, and sessions in a single transaction
-        await prisma.$transaction([
-          prisma.account.deleteMany({ where: { userId: employeeToDelete.userId } }),
-          prisma.session.deleteMany({ where: { userId: employeeToDelete.userId } }),
-          prisma.user.delete({ where: { id: employeeToDelete.userId } })
-        ]);
+        await prisma.user.update({
+          where: { id: employeeToDelete.userId },
+          data: { isActive: false }
+        });
       } catch (e) {
-        console.warn("Could not delete user record, it might be referenced elsewhere.");
+        console.warn("Could not deactivate user account.");
       }
     }
 
@@ -354,7 +352,7 @@ export async function deleteEmployee(employeeId: string) {
   } catch (error: any) {
     console.error("Delete Employee Error:", error)
     const errorMsg = error.message || "";
-    if (errorMsg === "Unauthorized") return { error: "Your login session has expired. Please refresh the page to log in again." }
-    return { error: errorMsg || "Failed to delete employee" }
+    if (errorMsg === "Unauthorized") return { error: "Your login session has expired. Please refresh the page." }
+    return { error: errorMsg || "Failed to archive employee" }
   }
 }

@@ -5,6 +5,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
 import { format } from "date-fns";
 import { Suspense } from "react";
+import { AiAnomalyPanel } from "./AiAnomalyPanel";
 
 export default function LeavesPage({ searchParams }: { searchParams: Promise<{ employee?: string }> }) {
   return (
@@ -107,5 +108,10 @@ async function LeavesData({ searchParams }: { searchParams: Promise<{ employee?:
     console.warn("Prisma Database connection failed in Leaves:. Next.js Dev overlay suppressed.");
   }
 
-  return <LeavesClient stats={stats} leaves={leavesData} />;
+  return (
+    <div className="space-y-6">
+      <AiAnomalyPanel companyId={dbUser?.companyId ?? ''} userId={user.id} />
+      <LeavesClient stats={stats} leaves={leavesData} />
+    </div>
+  );
 }
