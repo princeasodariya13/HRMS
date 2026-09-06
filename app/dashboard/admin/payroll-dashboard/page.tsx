@@ -12,10 +12,10 @@ const percent = (value: number) => `${value.toFixed(1)}%`;
 const monthLabel = (year: number, month: number) => new Date(year, month - 1).toLocaleString("en-IN", { month: "short", year: "numeric" });
 const filterClass = "h-10 w-full rounded-xl border border-[#E5E7EB] dark:border-[#334155] bg-[#F8FAFC] dark:bg-[#1E293B] px-3 text-sm text-[#111827] dark:text-[#F3F4F6] focus:outline-none focus:ring-2 focus:ring-blue-500/20";
 const alertTone: Record<string, string> = {
-  "Missing contracts": "bg-amber-50 text-amber-700",
-  "Duplicate payslips": "bg-red-50 text-red-700",
-  "Pending leave requests": "bg-blue-50 text-blue-700",
-  "Attendance anomalies": "bg-orange-50 text-orange-700"
+  "Missing contracts": "bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  "Duplicate payslips": "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+  "Pending leave requests": "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  "Attendance anomalies": "bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
 };
 
 function getPeriod(value?: string) {
@@ -50,7 +50,7 @@ export default async function PayrollDashboardPage({ searchParams }: { searchPar
         : {})
   };
   const payslipWhere: any = {
-    payrollRun: { is: { companyId: user.companyId, month: period.month, year: period.year } },
+    payrollRun: { is: { ...(isSuperAdmin ? {} : { companyId: user.companyId }), month: period.month, year: period.year } },
     employee: { is: employeeFilter }
   };
   const overlap = { lte: end };
@@ -58,13 +58,13 @@ export default async function PayrollDashboardPage({ searchParams }: { searchPar
 
   const [employees, departments, payslips, approvedLeaves, pendingLeaves, attendances, missingContracts, trendPayslips] = await Promise.all([
     prisma.employee.findMany({ where: employeeFilter, include: { department: true, workingSchedule: true }, orderBy: { firstName: "asc" } }),
-    prisma.department.findMany({ where: { companyId: user.companyId }, orderBy: { name: "asc" } }),
+    prisma.department.findMany({ where: isSuperAdmin ? {} : { companyId: user.companyId }, orderBy: { name: "asc" } }),
     prisma.payslip.findMany({ where: payslipWhere, include: { employee: { include: { department: true } }, payrollRun: true } }),
-    prisma.leaveRequest.findMany({ where: { companyId: user.companyId, status: "APPROVED", ...dateOverlap, employee: { is: employeeFilter } }, select: { totalDays: true } }),
-    prisma.leaveRequest.count({ where: { companyId: user.companyId, status: "PENDING", ...dateOverlap, employee: { is: employeeFilter } } }),
+    prisma.leaveRequest.findMany({ where: { ...(isSuperAdmin ? {} : { companyId: user.companyId }), status: "APPROVED", ...dateOverlap, employee: { is: employeeFilter } }, select: { totalDays: true } }),
+    prisma.leaveRequest.count({ where: { ...(isSuperAdmin ? {} : { companyId: user.companyId }), status: "PENDING", ...dateOverlap, employee: { is: employeeFilter } } }),
     prisma.attendance.findMany({ where: { date: { gte: start, lt: end }, employee: { is: employeeFilter } }, select: { status: true } }),
     prisma.employee.count({ where: { ...employeeFilter, contracts: { none: { status: "RUNNING", startDate: { lte: end }, OR: [{ endDate: null }, { endDate: { gte: start } }] } } } }),
-    prisma.payslip.findMany({ where: { payrollRun: { is: { companyId: user.companyId, status: "PAID", periodStart: { gte: trendStart, lt: end } } }, employee: { is: employeeFilter } }, include: { payrollRun: true } })
+    prisma.payslip.findMany({ where: { payrollRun: { is: { ...(isSuperAdmin ? {} : { companyId: user.companyId }), status: "PAID", periodStart: { gte: trendStart, lt: end } } }, employee: { is: employeeFilter } }, include: { payrollRun: true } })
   ]);
 
   const paidPayslips = payslips.filter(payslip => payslip.payrollRun.status === "PAID");
@@ -138,7 +138,7 @@ export default async function PayrollDashboardPage({ searchParams }: { searchPar
             ["Duplicate payslips", duplicatePayslips, "Payroll", "red"],
             ["Pending leave requests", pendingLeaves, "Leave management", "blue"],
             ["Attendance anomalies", attendanceAnomalies, "Attendance", "orange"]
-          ].map(([label, value, detail]) => <div key={label as string} className="py-3 flex items-center justify-between"><div><p className="font-semibold text-sm text-[#111827] dark:text-[#F3F4F6]">{label}</p><p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">{detail}</p></div><span className={`min-w-8 text-center px-2 py-1 rounded-lg text-sm font-bold ${Number(value) > 0 ? alertTone[label as string] : "bg-emerald-50 text-emerald-700"}`}>{value}</span></div>)}</div>
+          ].map(([label, value, detail]) => <div key={label as string} className="py-3 flex items-center justify-between"><div><p className="font-semibold text-sm text-[#111827] dark:text-[#F3F4F6]">{label}</p><p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">{detail}</p></div><span className={`min-w-8 text-center px-2 py-1 rounded-lg text-sm font-bold ${Number(value) > 0 ? alertTone[label as string] : "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"}`}>{value}</span></div>)}</div>
         </section>
         <section className="bg-white dark:bg-[#0F172A] rounded-2xl border border-[#E5E7EB] dark:border-[#1E293B] p-6">
           <div className="flex items-center gap-2 mb-4"><CalendarClock className="w-5 h-5 text-blue-600" /><h2 className="text-lg font-bold text-[#111827] dark:text-[#F3F4F6]">Attendance & Time Off</h2></div>
@@ -148,7 +148,7 @@ export default async function PayrollDashboardPage({ searchParams }: { searchPar
 
       <section className="bg-white dark:bg-[#0F172A] rounded-2xl border border-[#E5E7EB] dark:border-[#1E293B] overflow-hidden">
         <div className="p-6 border-b border-[#E5E7EB] dark:border-[#1E293B]"><h2 className="text-lg font-bold text-[#111827] dark:text-[#F3F4F6]">Department Breakdown</h2><p className="text-sm text-[#6B7280] dark:text-[#9CA3AF]">Active headcount and paid net salary for the selected period.</p></div>
-        <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead className="bg-[#F8FAFC] dark:bg-[#1E293B] text-[#6B7280] dark:text-[#9CA3AF]"><tr><th className="px-6 py-3">Department</th><th className="px-6 py-3">Headcount</th><th className="px-6 py-3 text-right">Total salary</th></tr></thead><tbody className="divide-y divide-[#E5E7EB] dark:divide-[#1E293B]">{departmentBreakdown.map(department => <tr key={department.name}><td className="px-6 py-3 font-semibold text-[#111827] dark:text-[#F3F4F6]">{department.name}</td><td className="px-6 py-3 text-[#475569] dark:text-[#CBD5E1]">{department.headcount}</td><td className="px-6 py-3 text-right font-semibold text-[#111827] dark:text-[#F3F4F6]">{currency(department.salary)}</td></tr>)}{departmentBreakdown.length === 0 && <tr><td colSpan={3} className="px-6 py-8 text-center text-[#6B7280]">No employees match these filters.</td></tr>}</tbody></table></div>
+        <div className="overflow-x-auto"><table className="w-full text-sm text-left"><thead className="bg-[#F8FAFC] dark:bg-[#1E293B] text-[#6B7280] dark:text-[#9CA3AF]"><tr><th className="px-6 py-3">Department</th><th className="px-6 py-3">Headcount</th><th className="px-6 py-3 text-right">Total salary</th></tr></thead><tbody className="divide-y divide-[#E5E7EB] dark:divide-[#1E293B]">{departmentBreakdown.map(department => <tr key={department.name}><td className="px-6 py-3 font-semibold text-[#111827] dark:text-[#F3F4F6]">{department.name}</td><td className="px-6 py-3 text-[#475569] dark:text-[#CBD5E1]">{department.headcount}</td><td className="px-6 py-3 text-right font-semibold text-[#111827] dark:text-[#F3F4F6]">{currency(department.salary)}</td></tr>)}{departmentBreakdown.length === 0 && <tr><td colSpan={3} className="px-6 py-8 text-center text-[#6B7280] dark:text-[#9CA3AF]">No employees match these filters.</td></tr>}</tbody></table></div>
       </section>
     </div>
   );
