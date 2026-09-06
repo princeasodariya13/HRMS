@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import React, { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { 
   CalendarClock, Plus, Search, MoreVertical, Clock
 } from "lucide-react";
@@ -9,6 +10,7 @@ import { deleteSchedule } from "./actions";
 
 export function SchedulesClient({ initialSchedules }: { initialSchedules: any[] }) {
   const [schedules, setSchedules] = useState(initialSchedules);
+  React.useEffect(() => { setSchedules(initialSchedules); }, [initialSchedules]);
   const [searchQuery, setSearchQuery] = useState("");
   
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -16,6 +18,7 @@ export function SchedulesClient({ initialSchedules }: { initialSchedules: any[] 
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const filteredSchedules = schedules.filter(s => 
     s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -87,7 +90,7 @@ export function SchedulesClient({ initialSchedules }: { initialSchedules: any[] 
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-[#6B7280] dark:text-[#9CA3AF]">
                     <CalendarClock className="w-8 h-8 mx-auto mb-3 opacity-20" />
-                    <p>No schedules found.</p>
+                    <p>{searchQuery ? `No schedules found matching "${searchQuery}".` : "No working schedules configured."}</p>
                   </td>
                 </tr>
               ) : (
@@ -155,7 +158,7 @@ export function SchedulesClient({ initialSchedules }: { initialSchedules: any[] 
           schedule={selectedSchedule}
           onClose={() => {
             setIsModalOpen(false);
-            window.location.reload(); 
+            router.refresh(); 
           }} 
         />
       )}

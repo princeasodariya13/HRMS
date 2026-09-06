@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import prisma from '@/lib/prisma'
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { logAudit } from '@/lib/auditLog';
 
 function calculateWeeklyHours(lines: any[]) {
   let totalMinutes = 0;
@@ -38,16 +39,24 @@ export async function createSchedule(data: {
 
     const weeklyHours = calculateWeeklyHours(data.lines);
 
-    await prisma.workingSchedule.create({
+    const schedule = await prisma.workingSchedule.create({
       data: {
         companyId: companyId!,
         name: data.name,
         type: data.type,
         weeklyHours,
-        lines: {
-          create: data.lines
-        }
+        lines: { create: data.lines }
       }
+    });
+    
+    await logAudit({
+      companyId: companyId!,
+      userId: user.id,
+      module: 'SETTINGS', // Re-using SETTINGS module for schedules
+      action: 'CREATE',
+      recordId: schedule.id,
+      oldData: null,
+      newData: { name: schedule.name, type: schedule.type, weeklyHours },
     });
 
     revalidatePath('/dashboard/admin/schedules');
@@ -84,12 +93,17 @@ export async function updateSchedule(id: string, data: {
 
     await prisma.workingSchedule.update({
       where: { id },
-      data: {
-        name: data.name,
-        type: data.type,
-        weeklyHours,
-        lines: { create: data.lines }
-      }
+      data: { name: data.name, type: data.type, weeklyHours, lines: { create: data.lines } }
+    });
+    
+    await logAudit({
+      companyId: existing.companyId,
+      userId: user.id,
+      module: 'SETTINGS',
+      action: 'UPDATE',
+      recordId: id,
+      oldData: { name: existing.name, type: existing.type },
+      newData: { name: data.name, type: data.type, weeklyHours },
     });
 
     revalidatePath('/dashboard/admin/schedules');
@@ -117,6 +131,16 @@ export async function deleteSchedule(id: string) {
     }
 
     await prisma.workingSchedule.delete({ where: { id } });
+    
+    await logAudit({
+      companyId: existing.companyId,
+      userId: user.id,
+      module: 'SETTINGS',
+      action: 'DELETE',
+      recordId: id,
+      oldData: { name: existing.name, type: existing.type },
+      newData: null,
+    });
 
     revalidatePath('/dashboard/admin/schedules');
     return { success: true };
