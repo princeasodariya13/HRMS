@@ -25,6 +25,11 @@ vi.mock('@/lib/prisma', () => ({
       create: vi.fn(),
     },
     leaveRequest: {
+      findUnique: vi.fn(),
+      update: vi.fn(),
+    },
+    leaveAllocation: {
+      findFirst: vi.fn(),
       update: vi.fn(),
     },
     notification: {
@@ -37,7 +42,7 @@ vi.mock('@/lib/prisma', () => ({
     payslip: {
       createMany: vi.fn(),
     },
-    $transaction: vi.fn((cb) => cb(prisma)), // Simple pass-through for transactions
+    $transaction: vi.fn((cb) => cb(prisma)),
   }
 }));
 
@@ -121,24 +126,56 @@ describe('Server Actions Tests', () => {
 
   describe('updateLeaveStatus', () => {
     it('should approve a leave and trigger notification', async () => {
+      // Mock the HR actor (has role that passes canManagerApproveLeave)
       (prisma.user.findUnique as any).mockResolvedValue({
         id: 'admin-user-id',
-        companyId: 'company-1'
+        companyId: 'company-1',
+        role: 'HR_MANAGER',
       });
 
-      (prisma.leaveRequest.update as any).mockResolvedValue({
-        id: 'leave-1',
+      // Mock the leave request lookup (findUnique used internally)
+      const mockLeaveRequest = {
+        id: 'valid-leave-id',
+        companyId: 'company-1',
+        status: 'PENDING',
         totalDays: 2,
         leaveTypeId: 'type-1',
-        employee: { userId: 'emp-user-id' }
+        employeeId: 'emp-1',
+        startDate: new Date('2026-01-10'),
+        endDate: new Date('2026-01-11'),
+        managerApprovalStatus: 'PENDING',
+        employee: { id: 'emp-1', userId: 'emp-user-id' },
+        leaveType: { name: 'Annual Leave' },
+      };
+      (prisma.leaveRequest.findUnique as any).mockResolvedValue(mockLeaveRequest);
+
+      // Mock leave allocation check (sufficient balance)
+      (prisma.leaveAllocation.findFirst as any).mockResolvedValue({
+        id: 'alloc-1',
+        remainingDays: 10,
+        takenDays: 0,
       });
+
+      // Mock the leave request update response
+      (prisma.leaveRequest.update as any).mockResolvedValue({
+        ...mockLeaveRequest,
+        status: 'APPROVED',
+        employee: { userId: 'emp-user-id' },
+        leaveType: { name: 'Annual Leave' },
+      });
+
+      // notification.create is already mocked (returns undefined by default — that's fine)
+      (prisma.notification.create as any).mockResolvedValue({ id: 'notif-1' });
 
       const result = await updateLeaveStatus('valid-leave-id', 'APPROVED');
 
       expect(result.success).toBe(true);
-      expect(prisma.leaveRequest.update).toHaveBeenCalledWith(expect.objectContaining({
-        data: { status: 'APPROVED' }
-      }));
+      expect(prisma.leaveRequest.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'valid-leave-id' },
+          data: expect.objectContaining({ status: 'APPROVED' }),
+        })
+      );
       expect(prisma.notification.create).toHaveBeenCalled();
     });
   });
