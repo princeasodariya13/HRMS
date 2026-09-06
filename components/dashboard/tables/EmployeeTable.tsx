@@ -171,7 +171,7 @@ export function EmployeeTable({ employees = [] }: { employees?: EmployeeData[] }
       <div className="bg-white dark:bg-[#0F172A] rounded-2xl border border-[#E5E7EB] dark:border-[#1E293B] shadow-sm overflow-hidden" ref={tableRef}>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="bg-[#F8FAFC] dark:bg-[#1E293B] border-b border-[#E5E7EB] dark:border-[#1E293B] text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280]">
+            <thead className="bg-[#F8FAFC] dark:bg-[#1E293B] border-b border-[#E5E7EB] dark:border-[#1E293B] text-[#6B7280] dark:text-[#9CA3AF]">
               <tr>
                 <th className="px-6 py-4 font-semibold">Employee</th>
                 <th className="px-6 py-4 font-semibold">Role</th>
@@ -183,8 +183,8 @@ export function EmployeeTable({ employees = [] }: { employees?: EmployeeData[] }
             <tbody className="divide-y divide-[#E5E7EB] dark:divide-[#1E293B]">
               {filteredEmployees.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280]">
-                    No employees found matching "{searchQuery}".
+                  <td colSpan={5} className="px-6 py-12 text-center text-[#6B7280] dark:text-[#9CA3AF]">
+                    {searchQuery ? `No employees found matching "${searchQuery}".` : "No employees found in the directory."}
                   </td>
                 </tr>
               )}
@@ -197,7 +197,7 @@ export function EmployeeTable({ employees = [] }: { employees?: EmployeeData[] }
                       </div>
                       <div>
                         <Link href={`/dashboard/admin/employees/${emp.id}`} className="font-semibold text-[#111827] dark:text-[#F3F4F6] hover:text-blue-600 hover:underline">{emp.name}</Link>
-                        <div className="text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280] text-xs">{emp.email} • {emp.code}</div>
+                        <div className="text-[#6B7280] dark:text-[#9CA3AF] text-xs">{emp.email} • {emp.code}</div>
                       </div>
                     </div>
                   </td>
@@ -295,7 +295,7 @@ export function EmployeeTable({ employees = [] }: { employees?: EmployeeData[] }
                 </button>
               </div>
               <div className="p-6 space-y-4">
-                <p className="text-sm text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280]">Update the job title for <strong>{selectedEmp.name}</strong>.</p>
+                <p className="text-sm text-[#6B7280] dark:text-[#9CA3AF]">Update the job title for <strong>{selectedEmp.name}</strong>.</p>
                 <div>
                   <label className="block text-sm font-semibold text-[#111827] dark:text-[#F3F4F6] mb-1">New Job Title</label>
                   <select

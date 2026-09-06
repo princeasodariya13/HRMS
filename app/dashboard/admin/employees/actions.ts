@@ -90,6 +90,18 @@ export async function updateEmployeeStatus(employeeId: string, status: string) {
       data: { status: status as EmployeeStatus }
     })
 
+    if (employeeToUpdate.userId) {
+      const isNowActive = status === 'ACTIVE' || status === 'ON_LEAVE' || status === 'PROBATION';
+      try {
+        await prisma.user.update({
+          where: { id: employeeToUpdate.userId },
+          data: { isActive: isNowActive }
+        });
+      } catch (e) {
+        console.warn("Could not sync user active state with employee status.");
+      }
+    }
+
     await logAudit({
       companyId: dbUser.companyId,
       userId: user.id,

@@ -23,7 +23,7 @@ export default async function EmployeeDetailPage({ params }: { params: Promise<{
 
   const [employee, documents] = await Promise.all([
     prisma.employee.findFirst({
-      where: { id, companyId: user.companyId },
+      where: user.role === 'SUPER_ADMIN' ? { id } : { id, companyId: user.companyId },
       include: { department: true, workingSchedule: true, _count: { select: { contracts: true, attendances: true, leaveRequests: true, leaveAllocations: true } } }
     }),
     prisma.document.findMany({ where: { employeeId: id }, orderBy: { createdAt: "desc" } }),
