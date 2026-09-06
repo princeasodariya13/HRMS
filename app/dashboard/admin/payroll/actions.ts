@@ -27,8 +27,12 @@ export async function getEligibleEmployees(month: number, year: number, structur
   const periodEnd = new Date(year, month, 0); // Last day of month
 
   // Find all ACTIVE employees in company
+  const structure = await prisma.salaryStructure.findUnique({ where: { id: structureId } });
+  if (!structure) throw new Error("Structure not found");
+  if (dbUser.role !== 'SUPER_ADMIN' && structure.companyId !== dbUser.companyId) throw new Error("Access denied");
+  
   const employees = await prisma.employee.findMany({
-    where: { companyId: dbUser.companyId, status: 'ACTIVE' },
+    where: { companyId: structure.companyId, status: 'ACTIVE', deletedAt: null },
     select: { id: true, firstName: true, lastName: true, designation: true }
   });
 
@@ -56,8 +60,13 @@ export async function createDraftPayrun(month: number, year: number, structureId
     const periodStart = new Date(year, month - 1, 1);
     const periodEnd = new Date(year, month, 0);
 
+    const structure = await prisma.salaryStructure.findUnique({ where: { id: structureId } });
+    if (!structure) throw new Error("Structure not found");
+    if (dbUser.role !== 'SUPER_ADMIN' && structure.companyId !== dbUser.companyId) throw new Error("Access denied");
+    const targetCompanyId = structure.companyId;
+
     const existingRun = await prisma.payrollRun.findUnique({
-      where: { companyId_month_year: { companyId: dbUser.companyId, month, year } }
+      where: { companyId_month_year: { companyId: targetCompanyId, month, year } }
     });
 
     if (existingRun) {
@@ -68,7 +77,7 @@ export async function createDraftPayrun(month: number, year: number, structureId
     await prisma.$transaction(async (tx) => {
       const run = await tx.payrollRun.create({
         data: {
-          companyId: dbUser.companyId,
+          companyId: targetCompanyId,
           month,
           year,
           periodStart,
@@ -79,6 +88,16 @@ export async function createDraftPayrun(month: number, year: number, structureId
         }
       });
       createdRunId = run.id;
+      
+      await logAudit({
+        companyId: targetCompanyId,
+        userId: dbUser.id,
+        module: 'PAYROLL',
+        action: 'CREATE',
+        recordId: run.id,
+        oldData: null,
+        newData: { month, year, status: 'DRAFT', structureId }
+      });
 
       // Create draft payslips (zeroes)
       for (const empId of employeeIds) {
@@ -108,7 +127,7 @@ export async function computePayrun(runId: string) {
     const actor = await getPayrollActor();
     if (!canWritePayroll(actor.role)) throw new Error("You do not have permission to compute payroll.");
     const run = await prisma.payrollRun.findUnique({
-      where: { id: runId },
+      where: actor.role === 'SUPER_ADMIN' ? { id: runId } : { id: runId, companyId: actor.companyId },
       include: { payslips: true, salaryStructure: { include: { rules: { orderBy: { sequence: 'asc' } } } } }
     });
 
@@ -163,6 +182,16 @@ export async function computePayrun(runId: string) {
         where: { id: runId },
         data: { status: 'PROCESSING' }
       });
+
+      await logAudit({
+        companyId: run.companyId,
+        userId: actor.id,
+        module: 'PAYROLL',
+        action: 'UPDATE',
+        recordId: runId,
+        oldData: { status: run.status },
+        newData: { status: 'PROCESSING' }
+      });
     });
 
     revalidatePath(`/dashboard/admin/payroll/${runId}`);
@@ -176,9 +205,18 @@ export async function validatePayrun(runId: string) {
   try {
     const actor = await getPayrollActor();
     if (!canWritePayroll(actor.role)) throw new Error("You do not have permission to validate payroll.");
-    await prisma.payrollRun.update({
-      where: { id: runId },
+    const run = await prisma.payrollRun.update({
+      where: actor.role === 'SUPER_ADMIN' ? { id: runId } : { id: runId, companyId: actor.companyId },
       data: { status: 'APPROVED' }
+    });
+    await logAudit({
+      companyId: run.companyId,
+      userId: actor.id,
+      module: 'PAYROLL',
+      action: 'APPROVE',
+      recordId: runId,
+      oldData: null,
+      newData: { status: 'APPROVED' }
     });
     revalidatePath(`/dashboard/admin/payroll/${runId}`);
     return { success: true };
@@ -192,7 +230,7 @@ export async function markPayrunPaid(runId: string) {
     const actor = await getPayrollActor();
     if (!canControlPayroll(actor.role)) throw new Error("Only payroll managers and admins can mark payroll paid.");
     const run = await prisma.payrollRun.findUnique({
-      where: { id: runId },
+      where: actor.role === 'SUPER_ADMIN' ? { id: runId } : { id: runId, companyId: actor.companyId },
       include: { payslips: true }
     });
     if (!run) throw new Error("Run not found");
@@ -202,6 +240,15 @@ export async function markPayrunPaid(runId: string) {
     await prisma.payrollRun.update({
       where: { id: runId },
       data: { status: 'PAID', totalAmount }
+    });
+    await logAudit({
+      companyId: run.companyId,
+      userId: actor.id,
+      module: 'PAYROLL',
+      action: 'UPDATE',
+      recordId: runId,
+      oldData: { status: run.status },
+      newData: { status: 'PAID', totalAmount }
     });
     revalidatePath(`/dashboard/admin/payroll/${runId}`);
     revalidatePath('/dashboard/admin/payroll');
@@ -217,7 +264,7 @@ export async function sendPayrunPayslips(runId: string) {
     if (!canControlPayroll(user.role)) throw new Error('Only payroll managers and admins can send payslips.');
 
     const run = await prisma.payrollRun.findFirst({
-      where: { id: runId, companyId: user.companyId },
+      where: user.role === 'SUPER_ADMIN' ? { id: runId } : { id: runId, companyId: user.companyId },
       include: { payslips: { include: { employee: true, lines: { orderBy: { sequence: 'asc' } } } } }
     });
     if (!run) throw new Error('Payrun not found');
@@ -246,9 +293,18 @@ export async function deletePayrun(runId: string) {
   try {
     const actor = await getPayrollActor();
     if (!canControlPayroll(actor.role)) throw new Error("Only payroll managers and admins can delete payroll runs.");
-    const run = await prisma.payrollRun.findUnique({ where: { id: runId } });
+    const run = await prisma.payrollRun.findUnique({ where: actor.role === 'SUPER_ADMIN' ? { id: runId } : { id: runId, companyId: actor.companyId } });
     if (!run || run.status === 'PAID') throw new Error("Cannot delete run");
     await prisma.payrollRun.delete({ where: { id: runId } });
+    await logAudit({
+      companyId: run.companyId,
+      userId: actor.id,
+      module: 'PAYROLL',
+      action: 'DELETE',
+      recordId: runId,
+      oldData: { status: run.status },
+      newData: null
+    });
     revalidatePath('/dashboard/admin/payroll');
     return { success: true };
   } catch (error: any) {

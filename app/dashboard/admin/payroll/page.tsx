@@ -56,15 +56,16 @@ async function PayrollData() {
     });
 
     const companyId = dbUser?.companyId;
+    const isSuperAdmin = dbUser?.role === 'SUPER_ADMIN';
 
-    if (companyId) {
+    if (companyId || isSuperAdmin) {
       salaryStructures = await prisma.salaryStructure.findMany({
-        where: { companyId },
+        where: isSuperAdmin ? {} : { companyId },
         select: { id: true, name: true }
       });
 
       const dbEmployees = await prisma.employee.findMany({
-        where: { companyId, status: 'ACTIVE' },
+        where: { ...(isSuperAdmin ? {} : { companyId }), status: 'ACTIVE', deletedAt: null },
         select: { id: true, firstName: true, lastName: true }
       });
       employeesList = dbEmployees.map(emp => ({
@@ -75,7 +76,7 @@ async function PayrollData() {
       const activeEmployeesCount = dbEmployees.length;
       
       const rawRuns = await prisma.payrollRun.findMany({
-        where: { companyId },
+        where: isSuperAdmin ? {} : { companyId },
         orderBy: [{ year: 'desc' }, { month: 'desc' }],
         take: 12,
         include: {

@@ -31,6 +31,7 @@ type PayrollClientProps = {
 export function PayrollClient({ stats, recentRuns, isDemo, salaryStructures, role }: PayrollClientProps) {
   const router = useRouter();
   const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const canWritePayroll = ["SUPER_ADMIN", "COMPANY_ADMIN", "HR_PAYROLL_USER", "HR_PAYROLL_MANAGER", "PAYROLL_MANAGER"].includes(role);
 
   return (
@@ -104,7 +105,9 @@ export function PayrollClient({ stats, recentRuns, isDemo, salaryStructures, rol
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
             <input 
               type="text" 
-              placeholder="Search runs..." 
+              placeholder="Search runs..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)} 
               className="pl-9 pr-4 py-2 bg-[#F8FAFC] dark:bg-[#1E293B] border border-[#E5E7EB] dark:border-[#334155] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#111827]/20 transition-all w-64 text-[#111827] dark:text-[#F3F4F6]"
             />
           </div>
@@ -121,7 +124,7 @@ export function PayrollClient({ stats, recentRuns, isDemo, salaryStructures, rol
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5E7EB] dark:divide-[#1E293B]">
-              {recentRuns.map((run) => (
+              {recentRuns.filter(r => r.monthString.toLowerCase().includes(searchQuery.toLowerCase()) || r.structureName.toLowerCase().includes(searchQuery.toLowerCase())).map((run) => (
                 <tr key={run.id} className="hover:bg-[#F8FAFC] dark:hover:bg-[#1E293B]/50 transition-colors">
                   <td className="px-6 py-4">
                     <span className="font-semibold text-[#111827] dark:text-[#F3F4F6]">{run.monthString}</span>
@@ -134,9 +137,9 @@ export function PayrollClient({ stats, recentRuns, isDemo, salaryStructures, rol
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 text-xs font-semibold rounded-md ${
-                      run.status === 'PAID' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
-                      run.status === 'FAILED' ? 'bg-red-50 text-red-700 border border-red-200' :
-                      'bg-amber-50 text-amber-700 border border-amber-200'
+                      run.status === 'PAID' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/30' :
+                      run.status === 'FAILED' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800/30' :
+                      'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800/30'
                     }`}>
                       {run.status === 'PAID' ? 'Paid' : run.status === 'PROCESSING' ? 'Computed' : run.status}
                     </span>
@@ -151,10 +154,10 @@ export function PayrollClient({ stats, recentRuns, isDemo, salaryStructures, rol
                   </td>
                 </tr>
               ))}
-              {recentRuns.length === 0 && (
+              {recentRuns.filter(r => r.monthString.toLowerCase().includes(searchQuery.toLowerCase()) || r.structureName.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-[#6B7280] dark:text-[#9CA3AF]">
-                    No payroll runs found.
+                    {searchQuery ? "No runs found matching your search." : "No payroll runs found."}
                   </td>
                 </tr>
               )}

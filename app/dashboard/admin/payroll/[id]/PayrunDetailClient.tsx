@@ -150,11 +150,11 @@ export function PayrunDetailClient({ run, canWritePayroll, canControlPayroll }: 
                 <tr key={ps.id} className="hover:bg-[#F8FAFC] dark:hover:bg-[#1E293B]/50 transition-colors">
                   <td className="px-6 py-4">
                     <p className="font-bold text-[#111827] dark:text-[#F3F4F6]">{ps.employeeName}</p>
-                    <p className="text-xs text-[#6B7280]">{ps.employeeCode}</p>
+                    <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">{ps.employeeCode}</p>
                   </td>
                   <td className="px-6 py-4 text-center">
                     <span className="font-semibold text-[#111827] dark:text-[#F3F4F6]">{ps.workedDays}</span>
-                    <span className="text-[#6B7280] text-xs"> / {ps.totalWorkingDays}</span>
+                    <span className="text-[#6B7280] dark:text-[#9CA3AF] text-xs"> / {ps.totalWorkingDays}</span>
                   </td>
                   <td className="px-6 py-4 text-right font-medium text-[#111827] dark:text-[#F3F4F6]">
                     ₹{ps.basicSalary.toLocaleString()}
@@ -172,7 +172,7 @@ export function PayrunDetailClient({ run, canWritePayroll, canControlPayroll }: 
               ))}
               {run.payslips.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-[#6B7280]">
+                  <td colSpan={6} className="px-6 py-8 text-center text-[#6B7280] dark:text-[#9CA3AF]">
                     No employees in this run.
                   </td>
                 </tr>

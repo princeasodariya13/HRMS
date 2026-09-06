@@ -13,7 +13,7 @@ export default async function PayrunDetailPage({ params }: { params: { id: strin
   
   const dbUser = await prisma.user.findUnique({ where: { id: session.user.id }, select: { companyId: true, role: true } });
   const run = await prisma.payrollRun.findFirst({
-    where: { id: runId, companyId: dbUser?.companyId },
+    where: dbUser?.role === 'SUPER_ADMIN' ? { id: runId } : { id: runId, companyId: dbUser?.companyId },
     include: {
       salaryStructure: true,
       payslips: {
