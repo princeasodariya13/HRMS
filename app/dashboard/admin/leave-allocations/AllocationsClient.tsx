@@ -165,9 +165,9 @@ export function AllocationsClient({
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="relative inline-block text-left">
+                      <div className={`relative inline-block text-left ${activeMenu === alloc.id ? "z-50" : ""}`}>
                         <button 
-                          onClick={() => setActiveMenu(activeMenu === alloc.id ? null : alloc.id)}
+                          onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === alloc.id ? null : alloc.id); }}
                           className="p-2 hover:bg-[#F3F4F6] dark:hover:bg-[#334155] rounded-lg transition-colors"
                         >
                           <MoreVertical className="w-4 h-4 text-[#6B7280] dark:text-[#9CA3AF]" />
@@ -175,18 +175,18 @@ export function AllocationsClient({
                         
                         {activeMenu === alloc.id && (
                           <>
-                            <div className="fixed inset-0 z-10" onClick={() => setActiveMenu(null)} />
-                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#0F172A] rounded-xl shadow-lg border border-[#E5E7EB] dark:border-[#1E293B] z-20 py-1 overflow-hidden">
+                            <div className="fixed inset-0 z-40" onClick={() => setActiveMenu(null)} />
+                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#0F172A] rounded-xl shadow-lg border border-[#E5E7EB] dark:border-[#1E293B] z-50 py-1 overflow-hidden">
                               {alloc.status === 'DRAFT' && (
                                 <>
                                   <button 
-                                    onClick={() => handleUpdateStatus(alloc.id, 'APPROVED')}
+                                    onClick={(e) => { e.stopPropagation(); setActiveMenu(null); handleUpdateStatus(alloc.id, 'APPROVED'); }}
                                     className="w-full px-4 py-2 text-left text-sm text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/10 flex items-center gap-2"
                                   >
                                     <CheckCircle2 className="w-4 h-4" /> Approve
                                   </button>
                                   <button 
-                                    onClick={() => handleUpdateStatus(alloc.id, 'REFUSED')}
+                                    onClick={(e) => { e.stopPropagation(); setActiveMenu(null); handleUpdateStatus(alloc.id, 'REFUSED'); }}
                                     className="w-full px-4 py-2 text-left text-sm text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/10 flex items-center gap-2"
                                   >
                                     <XCircle className="w-4 h-4" /> Refuse
@@ -195,7 +195,7 @@ export function AllocationsClient({
                                 </>
                               )}
                               <button 
-                                onClick={() => handleDelete(alloc.id)}
+                                onClick={(e) => { e.stopPropagation(); setActiveMenu(null); handleDelete(alloc.id); }}
                                 disabled={isPending}
                                 className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 flex items-center gap-2 disabled:opacity-50"
                               >

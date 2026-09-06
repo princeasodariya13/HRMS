@@ -115,9 +115,9 @@ export function SchedulesClient({ initialSchedules }: { initialSchedules: any[] 
                       {schedule._count?.employees || 0}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="relative inline-block text-left">
+                      <div className={`relative inline-block text-left ${activeMenu === schedule.id ? "z-50" : ""}`}>
                         <button 
-                          onClick={() => setActiveMenu(activeMenu === schedule.id ? null : schedule.id)}
+                          onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === schedule.id ? null : schedule.id); }}
                           className="p-2 hover:bg-[#F3F4F6] dark:hover:bg-[#334155] rounded-lg transition-colors"
                         >
                           <MoreVertical className="w-4 h-4 text-[#6B7280] dark:text-[#9CA3AF]" />
@@ -125,16 +125,16 @@ export function SchedulesClient({ initialSchedules }: { initialSchedules: any[] 
                         
                         {activeMenu === schedule.id && (
                           <>
-                            <div className="fixed inset-0 z-10" onClick={() => setActiveMenu(null)} />
-                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#0F172A] rounded-xl shadow-lg border border-[#E5E7EB] dark:border-[#1E293B] z-20 py-1 overflow-hidden">
+                            <div className="fixed inset-0 z-40" onClick={() => setActiveMenu(null)} />
+                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-[#0F172A] rounded-xl shadow-lg border border-[#E5E7EB] dark:border-[#1E293B] z-50 py-1 overflow-hidden">
                               <button 
-                                onClick={() => openEditModal(schedule)}
+                                onClick={(e) => { e.stopPropagation(); setActiveMenu(null); openEditModal(schedule); }}
                                 className="w-full px-4 py-2 text-left text-sm text-[#111827] dark:text-[#F3F4F6] hover:bg-[#F8FAFC] dark:hover:bg-[#1E293B]"
                               >
                                 Edit Schedule
                               </button>
                               <button 
-                                onClick={() => handleDelete(schedule.id)}
+                                onClick={(e) => { e.stopPropagation(); setActiveMenu(null); handleDelete(schedule.id); }}
                                 disabled={isPending}
                                 className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 disabled:opacity-50"
                               >
