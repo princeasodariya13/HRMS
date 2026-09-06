@@ -156,10 +156,10 @@ async function DashboardData() {
   const isDemoMode = totalEmployees === 0;
 
   const stats = [
-    { title: "Total Employees", value: displayTotalEmployees, icon: Users, trend: isDemoMode ? "0%" : "12%", trendUp: true },
-    { title: "Present Today", value: displayPresentToday, icon: UserCheck, trend: isDemoMode ? "0%" : "2.4%", trendUp: true },
-    { title: "Pending Leaves", value: displayPendingLeaves, icon: CalendarOff, trend: isDemoMode ? "0%" : "5%", trendUp: false },
-    { title: "Monthly Payroll", value: displayPayrollCost, icon: Banknote, trend: isDemoMode ? "0%" : "4.3%", trendUp: true },
+    { title: "Total Employees", value: displayTotalEmployees, icon: Users },
+    { title: "Present Today", value: displayPresentToday, icon: UserCheck },
+    { title: "Pending Leaves", value: displayPendingLeaves, icon: CalendarOff },
+    { title: "Monthly Payroll", value: displayPayrollCost, icon: Banknote },
   ];
 
   return (
@@ -215,11 +215,11 @@ async function DashboardData() {
           
           <div className="flex-1 space-y-3 text-sm text-white/80 dark:text-[#374151] leading-relaxed">
             <div className="bg-white/10 dark:bg-[#111827]/10 rounded-xl p-3">
-              <p className="font-medium text-white dark:text-[#111827] mb-1">📊 Leave Analysis</p>
+              <p className="font-medium text-white dark:text-[#111827] mb-1">🌴 Leave Analysis</p>
               <p>Run AI scan on the Leaves page to detect Mon/Fri patterns and department anomalies.</p>
             </div>
             <div className="bg-white/10 dark:bg-[#111827]/10 rounded-xl p-3">
-              <p className="font-medium text-white dark:text-[#111827] mb-1">📈 Attendance Insights</p>
+              <p className="font-medium text-white dark:text-[#111827] mb-1">📊 Attendance Insights</p>
               <p>Get 30-day AI-powered attendance health report on the Attendance page.</p>
             </div>
           </div>

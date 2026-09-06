@@ -3,14 +3,6 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useEffect, useState } from 'react';
 
-const data = [
-  { name: 'Mon', present: 1100, absent: 50, leave: 30 },
-  { name: 'Tue', present: 1150, absent: 40, leave: 28 },
-  { name: 'Wed', present: 1120, absent: 45, leave: 35 },
-  { name: 'Thu', present: 1180, absent: 35, leave: 33 },
-  { name: 'Fri', present: 1050, absent: 80, leave: 50 },
-];
-
 export function AttendanceTrendChart({ chartData }: { chartData?: any[] }) {
   const [mounted, setMounted] = useState(false);
   const [isDark, setIsDark] = useState(false);
@@ -37,7 +29,13 @@ export function AttendanceTrendChart({ chartData }: { chartData?: any[] }) {
 
   if (!mounted) return <div className="w-full h-full animate-pulse bg-[#F3F4F6] dark:bg-[#1E293B] rounded-xl" />;
 
-  const displayData = chartData || data;
+  if (!chartData || chartData.length === 0) {
+    return (
+      <div className="flex items-center justify-center w-full h-full text-sm text-[#9CA3AF]">
+        No attendance data available for the selected period
+      </div>
+    );
+  }
 
   const color = isDark ? '#F3F4F6' : '#111827';
   const gridColor = isDark ? '#1E293B' : '#E5E7EB';
@@ -49,7 +47,7 @@ export function AttendanceTrendChart({ chartData }: { chartData?: any[] }) {
     <div className="h-full w-full pt-4">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
-          data={displayData}
+          data={chartData}
           margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
         >
           <defs>
