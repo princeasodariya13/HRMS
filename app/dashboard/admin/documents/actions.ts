@@ -29,7 +29,7 @@ export async function verifyDocument(documentId: string) {
       include: { employee: true }
     });
 
-    if (!doc || doc.employee.companyId !== dbUser.companyId) {
+    if (!doc || (dbUser.role !== 'SUPER_ADMIN' && doc.employee.companyId !== dbUser.companyId)) {
       return { error: "Document not found or access denied" };
     }
 
@@ -39,7 +39,7 @@ export async function verifyDocument(documentId: string) {
     });
 
     await logAudit({
-      companyId: dbUser.companyId,
+      companyId: doc.employee.companyId,
       userId: user.id,
       module: 'DOCUMENT',
       action: 'UPDATE',

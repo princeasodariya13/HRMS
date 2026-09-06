@@ -5,6 +5,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
 import { uploadDocumentToCloudinary } from "@/lib/cloudinary";
+import { logAudit } from "@/lib/auditLog";
 import type { DocumentType } from "@prisma/client";
 
 export async function uploadDocument(formData: FormData) {
@@ -70,6 +71,15 @@ export async function uploadDocument(formData: FormData) {
       }
     });
 
+    await logAudit({
+      companyId: dbUser.companyId,
+      userId: user.id,
+      module: "DOCUMENT",
+      action: "CREATE",
+      recordId: documentType,
+      newData: { title, type, fileUrl }
+    });
+
     revalidatePath("/dashboard/employee/documents");
     return { success: true };
   } catch (error: any) {
@@ -102,6 +112,15 @@ export async function deleteDocument(documentId: string) {
 
     await prisma.document.delete({
       where: { id: documentId }
+    });
+
+    await logAudit({
+      companyId: dbUser.companyId,
+      userId: user.id,
+      module: "DOCUMENT",
+      action: "DELETE",
+      recordId: documentId,
+      oldData: { title: doc.title, type: doc.type }
     });
 
     revalidatePath("/dashboard/employee/documents");

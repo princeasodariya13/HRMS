@@ -26,18 +26,19 @@ export default async function DocumentsPage() {
   try {
     dbUser = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { companyId: true, email: true }
+      select: { companyId: true, email: true, role: true }
     });
 
     const companyId = dbUser?.companyId;
 
-    if (companyId) {
+    if (companyId || dbUser.role === 'SUPER_ADMIN') {
+      const isSuperAdmin = dbUser.role === 'SUPER_ADMIN';
       const [totalCount, policyCount, contractCount, fetchedDocs] = await Promise.all([
-        prisma.document.count({ where: { employee: { companyId } } }),
-        prisma.document.count({ where: { employee: { companyId }, type: 'POLICY' } }),
-        prisma.document.count({ where: { employee: { companyId }, type: 'CONTRACT' } }),
+        prisma.document.count({ where: isSuperAdmin ? {} : { employee: { companyId } } }),
+        prisma.document.count({ where: { ...(isSuperAdmin ? {} : { employee: { companyId } }), type: 'POLICY' } }),
+        prisma.document.count({ where: { ...(isSuperAdmin ? {} : { employee: { companyId } }), type: 'CONTRACT' } }),
         prisma.document.findMany({
-          where: { employee: { companyId } },
+          where: isSuperAdmin ? {} : { employee: { companyId } },
           include: { employee: true },
           orderBy: { createdAt: 'desc' },
           take: 8
@@ -80,9 +81,9 @@ export default async function DocumentsPage() {
 
   const getTypeBg = (type: string) => {
     switch(type) {
-      case 'POLICY': return "bg-purple-100";
-      case 'CONTRACT': return "bg-blue-100";
-      default: return "bg-slate-100";
+      case 'POLICY': return "bg-purple-100 dark:bg-purple-900/30";
+      case 'CONTRACT': return "bg-blue-100 dark:bg-blue-900/30";
+      default: return "bg-slate-100 dark:bg-slate-800/50";
     }
   };
 
@@ -91,7 +92,7 @@ export default async function DocumentsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#111827] dark:text-[#F3F4F6]">Document Center</h1>
-          <p className="text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280] text-sm">Securely manage policies, contracts, and employee records.</p>
+          <p className="text-[#6B7280] dark:text-[#9CA3AF] text-sm">Securely manage policies, contracts, and employee records.</p>
         </div>
         <div className="flex items-center gap-3">
           <UploadDocumentModal />
@@ -100,29 +101,29 @@ export default async function DocumentsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-[#0F172A] rounded-2xl border border-[#E5E7EB] dark:border-[#1E293B] shadow-sm p-6 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-blue-50 border border-blue-100 dark:bg-blue-900/30 dark:border-blue-800 flex items-center justify-center">
             <Folder className="w-6 h-6 text-blue-600" />
           </div>
           <div>
-            <p className="text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280] text-sm font-medium">Total Documents</p>
+            <p className="text-[#6B7280] dark:text-[#9CA3AF] text-sm font-medium">Total Documents</p>
             <p className="text-2xl font-bold text-[#111827] dark:text-[#F3F4F6]">{totalDocs}</p>
           </div>
         </div>
         <div className="bg-white dark:bg-[#0F172A] rounded-2xl border border-[#E5E7EB] dark:border-[#1E293B] shadow-sm p-6 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-purple-50 border border-purple-100 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-purple-50 border border-purple-100 dark:bg-purple-900/30 dark:border-purple-800 flex items-center justify-center">
             <Shield className="w-6 h-6 text-purple-600" />
           </div>
           <div>
-            <p className="text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280] text-sm font-medium">Active Policies</p>
+            <p className="text-[#6B7280] dark:text-[#9CA3AF] text-sm font-medium">Active Policies</p>
             <p className="text-2xl font-bold text-[#111827] dark:text-[#F3F4F6]">{policiesCount}</p>
           </div>
         </div>
         <div className="bg-white dark:bg-[#0F172A] rounded-2xl border border-[#E5E7EB] dark:border-[#1E293B] shadow-sm p-6 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-emerald-50 border border-emerald-100 dark:bg-emerald-900/30 dark:border-emerald-800 flex items-center justify-center">
             <FileText className="w-6 h-6 text-emerald-600" />
           </div>
           <div>
-            <p className="text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280] text-sm font-medium">Employee Contracts</p>
+            <p className="text-[#6B7280] dark:text-[#9CA3AF] text-sm font-medium">Employee Contracts</p>
             <p className="text-2xl font-bold text-[#111827] dark:text-[#F3F4F6]">{contractsCount}</p>
           </div>
         </div>
@@ -134,7 +135,7 @@ export default async function DocumentsPage() {
         </div>
         <div className="overflow-x-auto flex-1 p-2">
           <table className="w-full text-sm text-left">
-            <thead className="bg-transparent text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280]">
+            <thead className="bg-transparent text-[#6B7280] dark:text-[#9CA3AF]">
               <tr>
                 <th className="px-6 py-3 font-semibold pb-4">Document Name</th>
                 <th className="px-6 py-3 font-semibold pb-4">Linked To</th>
@@ -145,7 +146,7 @@ export default async function DocumentsPage() {
             </thead>
             <tbody className="divide-y divide-[#E5E7EB] dark:divide-[#1E293B]">
               {recentDocs.map((doc) => (
-                <tr key={doc.id} className="hover:bg-[#F8FAFC] dark:hover:bg-[#1E293B]/50 dark:bg-[#1E293B] transition-colors group">
+                <tr key={doc.id} className="hover:bg-[#F8FAFC] dark:hover:bg-[#1E293B]/50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${getTypeBg(doc.type)}`}>
@@ -153,7 +154,7 @@ export default async function DocumentsPage() {
                       </div>
                       <div>
                         <div className="font-semibold text-[#111827] dark:text-[#F3F4F6]">{doc.title}</div>
-                        <div className="text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280] text-xs mt-0.5">{doc.type.replace('_', ' ')}</div>
+                        <div className="text-[#6B7280] dark:text-[#9CA3AF] text-xs mt-0.5">{doc.type.replace('_', ' ')}</div>
                       </div>
                     </div>
                   </td>
@@ -164,12 +165,12 @@ export default async function DocumentsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280]">
+                    <div className="flex items-center gap-2 text-[#6B7280] dark:text-[#9CA3AF]">
                       <Calendar className="w-4 h-4" />
                       <span>{doc.date}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280] font-medium">{doc.size}</td>
+                  <td className="px-6 py-4 text-[#6B7280] dark:text-[#9CA3AF] font-medium">{doc.size}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-3">
                       <VerifyDocumentButton documentId={doc.id} isVerified={doc.isVerified || false} />
@@ -184,7 +185,7 @@ export default async function DocumentsPage() {
               ))}
               {recentDocs.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280]">
+                  <td colSpan={5} className="px-6 py-12 text-center text-[#6B7280] dark:text-[#9CA3AF]">
                     <div className="flex flex-col items-center justify-center">
                       <Folder className="w-12 h-12 text-[#E5E7EB] mb-4" />
                       <p className="font-semibold text-[#111827] dark:text-[#F3F4F6]">No documents uploaded yet</p>

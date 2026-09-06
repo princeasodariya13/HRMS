@@ -9,7 +9,7 @@ export function VerifyDocumentButton({ documentId, isVerified }: { documentId: s
 
   if (isVerified) {
     return (
-      <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-semibold">
+      <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-full text-xs font-semibold">
         <CheckCircle2 className="w-3.5 h-3.5" />
         Verified
       </div>

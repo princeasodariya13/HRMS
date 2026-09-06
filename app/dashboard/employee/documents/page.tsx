@@ -70,7 +70,7 @@ export default async function EmployeeDocumentsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[#111827] dark:text-[#F3F4F6]">My Documents</h1>
-          <p className="text-gray-500 mt-1">Upload and manage your official employment documents securely.</p>
+          <p className="text-gray-500 dark:text-[#9CA3AF] mt-1">Upload and manage your official employment documents securely.</p>
         </div>
       </div>
 
@@ -86,9 +86,9 @@ export default async function EmployeeDocumentsPage() {
             <UploadDocumentForm />
           </div>
 
-          <div className="bg-blue-50 rounded-3xl p-6 border border-blue-100">
-            <h3 className="font-semibold text-blue-900 mb-2">Secure Storage</h3>
-            <p className="text-sm text-blue-800/80 leading-relaxed">
+          <div className="bg-blue-50 dark:bg-blue-900/30 rounded-3xl p-6 border border-blue-100 dark:border-blue-800">
+            <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Secure Storage</h3>
+            <p className="text-sm text-blue-800/80 dark:text-blue-200/80 leading-relaxed">
               All documents uploaded are encrypted and stored securely in compliance with corporate data protection policies. Only authorized HR personnel can access these files.
             </p>
           </div>
@@ -100,9 +100,9 @@ export default async function EmployeeDocumentsPage() {
             <h2 className="text-lg font-bold text-[#111827] dark:text-[#F3F4F6] mb-6">Document Vault</h2>
             
             {documents.length === 0 ? (
-              <div className="text-center py-16 text-gray-500 border-2 border-dashed border-gray-100 rounded-2xl">
-                <FileStack className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-lg font-medium text-gray-900 mb-1">Your vault is empty</p>
+              <div className="text-center py-16 text-gray-500 dark:text-[#9CA3AF] border-2 border-dashed border-gray-100 dark:border-[#334155] rounded-2xl">
+                <FileStack className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                <p className="text-lg font-medium text-gray-900 dark:text-white mb-1">Your vault is empty</p>
                 <p className="text-sm">Upload your first document using the form on the left.</p>
               </div>
             ) : (
@@ -115,7 +115,7 @@ export default async function EmployeeDocumentsPage() {
                         {getIconForType(doc.type)}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900 line-clamp-1">{doc.title}</h3>
+                        <h3 className="font-semibold text-gray-900 dark:text-[#F3F4F6] line-clamp-1">{doc.title}</h3>
                         <div className="flex items-center gap-3 mt-1">
                           <span className="text-xs font-medium text-gray-500">
                             {getLabelForType(doc.type)}
@@ -134,12 +134,12 @@ export default async function EmployeeDocumentsPage() {
                         {doc.isVerified ? (
                           <>
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                            <span className="text-emerald-700 border-emerald-200">Verified</span>
+                            <span className="text-emerald-700 dark:text-emerald-400 border-emerald-200">Verified</span>
                           </>
                         ) : (
                           <>
                             <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
-                            <span className="text-amber-700 border-amber-200">Pending Review</span>
+                            <span className="text-amber-700 dark:text-amber-400 border-amber-200">Pending Review</span>
                           </>
                         )}
                       </div>
