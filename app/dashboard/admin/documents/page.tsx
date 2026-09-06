@@ -31,8 +31,8 @@ export default async function DocumentsPage() {
 
     const companyId = dbUser?.companyId;
 
-    if (companyId || dbUser.role === 'SUPER_ADMIN') {
-      const isSuperAdmin = dbUser.role === 'SUPER_ADMIN';
+    if (companyId || dbUser?.role === 'SUPER_ADMIN') {
+      const isSuperAdmin = dbUser?.role === 'SUPER_ADMIN';
       const [totalCount, policyCount, contractCount, fetchedDocs] = await Promise.all([
         prisma.document.count({ where: isSuperAdmin ? {} : { employee: { companyId } } }),
         prisma.document.count({ where: { ...(isSuperAdmin ? {} : { employee: { companyId } }), type: 'POLICY' } }),

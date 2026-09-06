@@ -32,8 +32,8 @@ export default async function RecruitmentPage() {
 
     const companyId = dbUser?.companyId;
 
-    if (companyId || dbUser.role === 'SUPER_ADMIN') {
-      const isSuperAdmin = dbUser.role === 'SUPER_ADMIN';
+    if (companyId || dbUser?.role === 'SUPER_ADMIN') {
+      const isSuperAdmin = dbUser?.role === 'SUPER_ADMIN';
       const [jobsCount, fetchedJobs] = await Promise.all([
         prisma.job.count({ where: { ...(isSuperAdmin ? {} : { companyId }), isActive: true } }),
         prisma.job.findMany({
