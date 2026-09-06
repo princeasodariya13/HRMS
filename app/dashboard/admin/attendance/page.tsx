@@ -42,8 +42,9 @@ async function AttendanceData({ searchParams }: { searchParams: Promise<{ employ
     const companyId = dbUser?.companyId;
     if (companyId) {
       const today = new Date(); today.setHours(0, 0, 0, 0);
+      const isSuperAdmin = dbUser?.role === 'SUPER_ADMIN';
       const logs = await prisma.attendance.findMany({
-        where: { employee: { companyId, ...(employeeId ? { id: employeeId } : {}) }, date: { gte: today } },
+        where: { employee: { ...(isSuperAdmin ? {} : { companyId }), deletedAt: null, ...(employeeId ? { id: employeeId } : {}) }, date: { gte: today } },
         include: { employee: true },
         orderBy: { checkInTime: 'desc' }
       });

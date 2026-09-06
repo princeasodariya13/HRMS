@@ -91,46 +91,46 @@ export default async function EmployeeAttendancePage() {
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-[#0F172A] rounded-3xl p-6 border border-[#E5E7EB] dark:border-[#1E293B] shadow-sm flex flex-col justify-between">
-          <div className="flex items-center gap-3 text-gray-600 mb-2">
+          <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400 mb-2">
             <CalendarCheck className="w-5 h-5 text-blue-600" />
             <h3 className="font-medium">Days Present</h3>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-bold text-[#111827] dark:text-[#F3F4F6]">{stats.present}</span>
-            <span className="text-sm font-medium text-gray-500">this month</span>
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">this month</span>
           </div>
         </div>
 
         <div className="bg-white dark:bg-[#0F172A] rounded-3xl p-6 border border-[#E5E7EB] dark:border-[#1E293B] shadow-sm flex flex-col justify-between">
-          <div className="flex items-center gap-3 text-gray-600 mb-2">
+          <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400 mb-2">
             <Clock className="w-5 h-5 text-emerald-600" />
             <h3 className="font-medium">Total Hours</h3>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-bold text-[#111827] dark:text-[#F3F4F6]">{Math.round(stats.totalHours)}</span>
-            <span className="text-sm font-medium text-gray-500">hrs this month</span>
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">hrs this month</span>
           </div>
         </div>
 
         <div className="bg-white dark:bg-[#0F172A] rounded-3xl p-6 border border-[#E5E7EB] dark:border-[#1E293B] shadow-sm flex flex-col justify-between">
-          <div className="flex items-center gap-3 text-gray-600 mb-2">
+          <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400 mb-2">
             <CalendarRange className="w-5 h-5 text-purple-600" />
             <h3 className="font-medium">Avg. Hours/Day</h3>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-bold text-[#111827] dark:text-[#F3F4F6]">{stats.avgHours.toFixed(1)}</span>
-            <span className="text-sm font-medium text-gray-500">hrs</span>
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">hrs</span>
           </div>
         </div>
 
         <div className="bg-white dark:bg-[#0F172A] rounded-3xl p-6 border border-[#E5E7EB] dark:border-[#1E293B] shadow-sm flex flex-col justify-between">
-          <div className="flex items-center gap-3 text-gray-600 mb-2">
+          <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400 mb-2">
             <CalendarDays className="w-5 h-5 text-red-500" />
             <h3 className="font-medium">Days Absent</h3>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-bold text-[#111827] dark:text-[#F3F4F6]">{stats.absent}</span>
-            <span className="text-sm font-medium text-gray-500">this month</span>
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">this month</span>
           </div>
         </div>
       </div>
@@ -164,14 +164,14 @@ export default async function EmployeeAttendancePage() {
             </div>
             
             {attendanceRecords.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <CalendarCheck className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                <CalendarCheck className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                 <p>No attendance records found.</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left">
-                  <thead className="text-xs text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-[#1E293B]/50 rounded-lg">
+                  <thead className="text-xs text-gray-500 dark:text-gray-400 dark:text-gray-400 uppercase bg-gray-50 dark:bg-[#1E293B]/50 rounded-lg">
                     <tr>
                       <th className="px-4 py-3 rounded-l-lg">Date</th>
                       <th className="px-4 py-3">Check In</th>
@@ -184,17 +184,17 @@ export default async function EmployeeAttendancePage() {
                     {attendanceRecords.map((record) => {
                       const dateObj = new Date(record.date);
                       return (
-                        <tr key={record.id} className="border-b border-gray-100 dark:border-[#1E293B] last:border-0 hover:bg-gray-50/50 dark:hover:bg-[#1E293B]/50 transition-colors">
-                          <td className="px-4 py-4 font-medium text-gray-900 whitespace-nowrap">
+                        <tr key={record.id} className="border-b border-gray-100 dark:border-gray-800 dark:border-[#1E293B] last:border-0 hover:bg-gray-50/50 dark:hover:bg-[#1E293B]/50 transition-colors">
+                          <td className="px-4 py-4 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
                             {dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                           </td>
-                          <td className="px-4 py-4 text-gray-600">
+                          <td className="px-4 py-4 text-gray-600 dark:text-gray-400">
                             {record.checkInTime ? new Date(record.checkInTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--'}
                           </td>
-                          <td className="px-4 py-4 text-gray-600">
+                          <td className="px-4 py-4 text-gray-600 dark:text-gray-400">
                             {record.checkOutTime ? new Date(record.checkOutTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--'}
                           </td>
-                          <td className="px-4 py-4 text-gray-600 font-medium">
+                          <td className="px-4 py-4 text-gray-600 dark:text-gray-400 font-medium">
                             {record.totalHours ? `${record.totalHours}h` : '--'}
                           </td>
                           <td className="px-4 py-4 text-right">

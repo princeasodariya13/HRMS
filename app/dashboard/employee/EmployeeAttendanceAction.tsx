@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { LogIn, LogOut, Loader2 } from "lucide-react";
 import { checkIn, checkOut } from "./actions";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ export function EmployeeAttendanceAction({
 }) {
   const [status, setStatus] = useState<AttendanceStatus>(initialStatus);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleAction = async () => {
     if (!employeeId) return;
@@ -36,6 +38,7 @@ export function EmployeeAttendanceAction({
             isCheckedIn: true,
             checkInTime: new Date()
           });
+          router.refresh();
         }
       } else if (!status.isCheckedOut) {
         // Check out
@@ -46,6 +49,7 @@ export function EmployeeAttendanceAction({
             isCheckedOut: true,
             checkOutTime: new Date()
           });
+          router.refresh();
         }
       }
     } catch (e) {

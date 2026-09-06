@@ -15,6 +15,16 @@ type AttendanceLog = {
   initials: string;
 }
 
+const getStatusStyle = (status: string) => {
+  switch(status.toUpperCase()) {
+    case 'PRESENT': return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800";
+    case 'LATE': return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800";
+    case 'ABSENT': return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800";
+    case 'HALF_DAY': return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800";
+    default: return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+  }
+};
+
 export function AttendanceClient({ 
   initialLogs,
   isInitiallyCheckedIn = false
@@ -71,7 +81,7 @@ export function AttendanceClient({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#111827] dark:text-[#F3F4F6]">Attendance</h1>
-          <p className="text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280] text-sm">Track your daily work hours and check-in status.</p>
+          <p className="text-[#6B7280] dark:text-[#9CA3AF] text-sm">Track your daily work hours and check-in status.</p>
         </div>
       </div>
 
@@ -83,7 +93,7 @@ export function AttendanceClient({
             <Clock className="w-8 h-8 text-[#111827] dark:text-[#F3F4F6]" />
           </div>
           <h2 className="text-3xl font-bold text-[#111827] dark:text-[#F3F4F6] tracking-tight">{currentTime}</h2>
-          <p className="text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280] text-sm mt-1">{currentDate}</p>
+          <p className="text-[#6B7280] dark:text-[#9CA3AF] text-sm mt-1">{currentDate}</p>
           
           <div className="mt-8 w-full">
             {!checkedIn ? (
@@ -144,7 +154,7 @@ export function AttendanceClient({
           
           <div className="flex-1 overflow-x-auto">
             <table className="w-full text-sm text-left">
-              <thead className="bg-[#F8FAFC] dark:bg-[#1E293B] border-b border-[#E5E7EB] dark:border-[#1E293B] text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280]">
+              <thead className="bg-[#F8FAFC] dark:bg-[#1E293B] border-b border-[#E5E7EB] dark:border-[#1E293B] text-[#6B7280] dark:text-[#9CA3AF]">
                 <tr>
                   <th className="px-6 py-4 font-semibold">Employee</th>
                   <th className="px-6 py-4 font-semibold">Check In</th>
@@ -162,23 +172,23 @@ export function AttendanceClient({
                         </div>
                         <div>
                           <div className="font-semibold text-[#111827] dark:text-[#F3F4F6]">{log.employeeName}</div>
-                          <div className="text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280] text-xs">{log.role}</div>
+                          <div className="text-[#6B7280] dark:text-[#9CA3AF] text-xs">{log.role}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 font-medium">{log.checkIn}</td>
                     <td className="px-6 py-4 text-[#9CA3AF] dark:text-[#6B7280] font-medium">{log.checkOut || '-'}</td>
                     <td className="px-6 py-4">
-                      <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full text-xs font-semibold">
-                        {log.status}
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getStatusStyle(log.status)}`}>
+                        {log.status.replace('_', ' ')}
                       </span>
                     </td>
                   </tr>
                 ))}
-                {initialLogs.length === 0 && (
+                {filteredLogs.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280]">
-                      No attendance logs for today.
+                    <td colSpan={4} className="px-6 py-8 text-center text-[#6B7280] dark:text-[#9CA3AF]">
+                      {searchQuery ? `No attendance records found matching "${searchQuery}".` : "No attendance records found for today."}
                     </td>
                   </tr>
                 )}

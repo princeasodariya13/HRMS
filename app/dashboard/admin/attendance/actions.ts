@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import prisma from '@/lib/prisma'
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { logAudit } from '@/lib/auditLog';
 
 export async function checkInAction() {
   try {
@@ -39,13 +40,23 @@ export async function checkInAction() {
       throw new Error("Already checked in today")
     }
 
-    await prisma.attendance.create({
+    const record = await prisma.attendance.create({
       data: {
         employeeId,
         date: new Date(),
         checkInTime: new Date(),
         status: "PRESENT",
       }
+    });
+    
+    await logAudit({
+      companyId: dbUser.companyId,
+      userId: user.id,
+      module: 'ATTENDANCE',
+      action: 'CREATE',
+      recordId: record.id,
+      oldData: null,
+      newData: { status: "PRESENT", checkInTime: record.checkInTime },
     })
 
     revalidatePath('/dashboard/admin/attendance')
@@ -102,6 +113,16 @@ export async function checkOutAction() {
         checkOutTime,
         totalHours
       }
+    });
+    
+    await logAudit({
+      companyId: dbUser.companyId,
+      userId: user.id,
+      module: 'ATTENDANCE',
+      action: 'UPDATE',
+      recordId: existing.id,
+      oldData: { checkOutTime: existing.checkOutTime },
+      newData: { checkOutTime, totalHours },
     })
 
     revalidatePath('/dashboard/admin/attendance')
