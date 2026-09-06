@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma'
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { revalidatePath } from 'next/cache';
+import { logAudit } from '@/lib/auditLog';
 
 export async function createJob(data: {
   title: string;
@@ -25,7 +26,7 @@ export async function createJob(data: {
       throw new Error("You do not have permission to post jobs.");
     }
 
-    await prisma.job.create({
+    const job = await prisma.job.create({
       data: {
         companyId: dbUser.companyId,
         title: data.title,
@@ -36,6 +37,15 @@ export async function createJob(data: {
         requirements: data.requirements,
         isActive: true,
       }
+    });
+
+    await logAudit({
+      companyId: dbUser.companyId,
+      userId: user.id,
+      module: 'RECRUITMENT',
+      action: 'CREATE',
+      recordId: job.id,
+      newData: { title: data.title, department: data.department }
     });
 
     revalidatePath('/dashboard/admin/recruitment');

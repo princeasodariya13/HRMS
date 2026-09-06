@@ -27,16 +27,17 @@ export default async function RecruitmentPage() {
   try {
     dbUser = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { companyId: true }
+      select: { companyId: true, role: true }
     });
 
     const companyId = dbUser?.companyId;
 
-    if (companyId) {
+    if (companyId || dbUser.role === 'SUPER_ADMIN') {
+      const isSuperAdmin = dbUser.role === 'SUPER_ADMIN';
       const [jobsCount, fetchedJobs] = await Promise.all([
-        prisma.job.count({ where: { companyId, isActive: true } }),
+        prisma.job.count({ where: { ...(isSuperAdmin ? {} : { companyId }), isActive: true } }),
         prisma.job.findMany({
-          where: { companyId, isActive: true },
+          where: { ...(isSuperAdmin ? {} : { companyId }), isActive: true },
           include: { _count: { select: { candidates: true } } },
           orderBy: { createdAt: 'desc' },
           take: 5
@@ -45,7 +46,7 @@ export default async function RecruitmentPage() {
 
       // Get candidate stats through the Job relation
       const allCandidates = await prisma.candidate.findMany({
-        where: { job: { companyId } },
+        where: isSuperAdmin ? {} : { job: { companyId } },
         include: { job: true },
         orderBy: { createdAt: 'desc' }
       });
@@ -96,7 +97,7 @@ export default async function RecruitmentPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#111827] dark:text-[#F3F4F6]">Recruitment Dashboard</h1>
-          <p className="text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280] text-sm">Manage job postings, candidates, and interview pipelines.</p>
+          <p className="text-[#6B7280] dark:text-[#9CA3AF] text-sm">Manage job postings, candidates, and interview pipelines.</p>
         </div>
         <div className="flex items-center gap-3">
           <CreateJobModal />
@@ -106,7 +107,7 @@ export default async function RecruitmentPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-[#0F172A] rounded-2xl border border-[#E5E7EB] dark:border-[#1E293B] shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280]">Open Jobs</h3>
+            <h3 className="font-semibold text-[#6B7280] dark:text-[#9CA3AF]">Open Jobs</h3>
             <div className="w-8 h-8 rounded-full bg-[#F3F4F6] dark:bg-[#1E293B] flex items-center justify-center">
               <Briefcase className="w-4 h-4 text-[#111827] dark:text-[#F3F4F6]" />
             </div>
@@ -116,8 +117,8 @@ export default async function RecruitmentPage() {
         
         <div className="bg-white dark:bg-[#0F172A] rounded-2xl border border-[#E5E7EB] dark:border-[#1E293B] shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280]">Total Candidates</h3>
-            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+            <h3 className="font-semibold text-[#6B7280] dark:text-[#9CA3AF]">Total Candidates</h3>
+            <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
               <Users className="w-4 h-4 text-blue-600" />
             </div>
           </div>
@@ -126,8 +127,8 @@ export default async function RecruitmentPage() {
 
         <div className="bg-white dark:bg-[#0F172A] rounded-2xl border border-[#E5E7EB] dark:border-[#1E293B] shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280]">Interviews Scheduled</h3>
-            <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center">
+            <h3 className="font-semibold text-[#6B7280] dark:text-[#9CA3AF]">Interviews Scheduled</h3>
+            <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
               <UserPlus className="w-4 h-4 text-amber-600" />
             </div>
           </div>
@@ -136,8 +137,8 @@ export default async function RecruitmentPage() {
 
         <div className="bg-white dark:bg-[#0F172A] rounded-2xl border border-[#E5E7EB] dark:border-[#1E293B] shadow-sm p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280]">Offers Accepted</h3>
-            <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center">
+            <h3 className="font-semibold text-[#6B7280] dark:text-[#9CA3AF]">Offers Accepted</h3>
+            <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
               <CheckCircle className="w-4 h-4 text-emerald-600" />
             </div>
           </div>
@@ -154,7 +155,7 @@ export default async function RecruitmentPage() {
           </div>
           <div className="flex-1 overflow-x-auto min-h-[250px]">
             <table className="w-full text-sm text-left">
-              <thead className="bg-[#F8FAFC] dark:bg-[#1E293B] border-b border-[#E5E7EB] dark:border-[#1E293B] text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280]">
+              <thead className="bg-[#F8FAFC] dark:bg-[#1E293B] border-b border-[#E5E7EB] dark:border-[#1E293B] text-[#6B7280] dark:text-[#9CA3AF]">
                 <tr>
                   <th className="px-6 py-3 font-semibold">Job Title</th>
                   <th className="px-6 py-3 font-semibold">Department</th>
@@ -163,9 +164,9 @@ export default async function RecruitmentPage() {
               </thead>
               <tbody className="divide-y divide-[#E5E7EB] dark:divide-[#1E293B]">
                 {recentJobs.map((job: any) => (
-                  <tr key={job.id} className="hover:bg-[#F8FAFC] dark:hover:bg-[#1E293B]/50 dark:bg-[#1E293B] transition-colors">
+                  <tr key={job.id} className="hover:bg-[#F8FAFC] dark:hover:bg-[#1E293B]/50 transition-colors">
                     <td className="px-6 py-4 font-medium text-[#111827] dark:text-[#F3F4F6]">{job.title}</td>
-                    <td className="px-6 py-4 text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280]">{job.department}</td>
+                    <td className="px-6 py-4 text-[#6B7280] dark:text-[#9CA3AF]">{job.department}</td>
                     <td className="px-6 py-4 text-right">
                       <span className="bg-[#F1F5F9] dark:bg-[#1E293B] text-[#111827] dark:text-[#F3F4F6] px-2.5 py-1 rounded-md text-xs font-semibold">
                         {job.candidateCount || 0}
@@ -175,7 +176,7 @@ export default async function RecruitmentPage() {
                 ))}
                 {recentJobs.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="px-6 py-8 text-center text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280]">
+                    <td colSpan={3} className="px-6 py-8 text-center text-[#6B7280] dark:text-[#9CA3AF]">
                       No active job postings.
                     </td>
                   </tr>

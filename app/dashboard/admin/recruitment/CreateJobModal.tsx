@@ -44,7 +44,7 @@ export function CreateJobModal() {
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/40 dark:bg-[#0F172A]/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-[#0F172A] w-full max-w-2xl rounded-2xl shadow-xl border border-[#E5E7EB] dark:border-[#1E293B] overflow-hidden flex flex-col max-h-[90vh]">
             <div className="flex justify-between items-center p-6 border-b border-[#E5E7EB] dark:border-[#1E293B]">
               <h2 className="text-xl font-bold text-[#111827] dark:text-[#F3F4F6]">Post New Job</h2>
