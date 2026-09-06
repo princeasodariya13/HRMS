@@ -39,8 +39,9 @@ export default async function PayrollDashboardPage({ searchParams }: { searchPar
   const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { companyId: true, role: true } });
   if (!user || user.role === "EMPLOYEE") redirect("/dashboard/employee");
 
+  const isSuperAdmin = user.role === 'SUPER_ADMIN';
   const employeeFilter: any = {
-    companyId: user.companyId,
+    ...(isSuperAdmin ? {} : { companyId: user.companyId }),
     status: "ACTIVE",
     ...(params.department && params.department !== "ALL" ? { departmentId: params.department } : {}),
     ...(params.employeeType === "UNASSIGNED"
