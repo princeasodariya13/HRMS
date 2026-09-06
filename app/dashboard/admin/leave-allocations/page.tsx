@@ -43,7 +43,7 @@ export default async function AdminLeaveAllocationsPage({ searchParams }: { sear
       });
 
       employees = await prisma.employee.findMany({
-        where: isSuperAdmin ? {} : { companyId },
+        where: { ...(isSuperAdmin ? {} : { companyId }), deletedAt: null },
         select: { id: true, firstName: true, lastName: true, designation: true }
       });
 

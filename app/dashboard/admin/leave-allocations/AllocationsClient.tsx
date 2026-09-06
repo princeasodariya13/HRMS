@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import React, { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { 
   CalendarRange, Plus, Search, Filter, MoreVertical, Trash2, CheckCircle2, XCircle
 } from "lucide-react";
@@ -19,12 +20,14 @@ export function AllocationsClient({
   leaveTypes: any[];
 }) {
   const [allocations, setAllocations] = useState(initialAllocations);
+  React.useEffect(() => { setAllocations(initialAllocations); }, [initialAllocations]);
   const [searchQuery, setSearchQuery] = useState("");
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const filteredAllocations = allocations.filter(a => {
     const matchesSearch = 
@@ -114,7 +117,7 @@ export function AllocationsClient({
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-[#6B7280] dark:text-[#9CA3AF]">
                     <CalendarRange className="w-8 h-8 mx-auto mb-3 opacity-20" />
-                    <p>No leave allocations found.</p>
+                    <p>{searchQuery ? `No allocations found matching "${searchQuery}".` : "No leave allocations found."}</p>
                   </td>
                 </tr>
               ) : (
@@ -217,7 +220,7 @@ export function AllocationsClient({
           leaveTypes={leaveTypes}
           onClose={() => {
             setIsModalOpen(false);
-            window.location.reload(); 
+            router.refresh(); 
           }} 
         />
       )}

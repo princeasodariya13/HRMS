@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma'
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { LeaveAllocationStatus } from '@prisma/client'
+import { logAudit } from "@/lib/auditLog"
 
 export async function createLeaveAllocation(data: {
   employeeId: string;
@@ -32,7 +33,7 @@ export async function createLeaveAllocation(data: {
       throw new Error("Employee not found or access denied");
     }
 
-    await prisma.leaveAllocation.create({
+    const allocation = await prisma.leaveAllocation.create({
       data: {
         employeeId: data.employeeId,
         leaveTypeId: data.leaveTypeId,
@@ -43,6 +44,16 @@ export async function createLeaveAllocation(data: {
         dateTo: new Date(data.dateTo),
         status: 'DRAFT'
       }
+    });
+
+    await logAudit({
+      companyId: employee.companyId,
+      userId: user.id,
+      module: 'LEAVE', // Mapping allocations to the LEAVE module
+      action: 'CREATE',
+      recordId: allocation.id,
+      oldData: null,
+      newData: { numberOfDays: data.numberOfDays, leaveTypeId: data.leaveTypeId },
     });
 
     revalidatePath('/dashboard/admin/leave-allocations');
@@ -78,6 +89,16 @@ export async function updateLeaveAllocationStatus(id: string, status: LeaveAlloc
       data: { status }
     });
 
+    await logAudit({
+      companyId: existing.employee.companyId,
+      userId: user.id,
+      module: 'LEAVE',
+      action: 'UPDATE',
+      recordId: id,
+      oldData: { status: existing.status },
+      newData: { status },
+    });
+
     revalidatePath('/dashboard/admin/leave-allocations');
     return { success: true };
   } catch (error: any) {
@@ -107,6 +128,16 @@ export async function deleteLeaveAllocation(id: string) {
     }
 
     await prisma.leaveAllocation.delete({ where: { id } });
+
+    await logAudit({
+      companyId: existing.employee.companyId,
+      userId: user.id,
+      module: 'LEAVE',
+      action: 'DELETE',
+      recordId: id,
+      oldData: { status: existing.status, numberOfDays: existing.numberOfDays },
+      newData: null,
+    });
 
     revalidatePath('/dashboard/admin/leave-allocations');
     return { success: true };
