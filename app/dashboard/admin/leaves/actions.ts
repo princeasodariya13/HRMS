@@ -40,7 +40,7 @@ export async function updateLeaveStatus(leaveId: string, status: 'APPROVED' | 'R
     const actor = await getActor();
     if (!canManagerApproveLeave(actor.role)) return { error: "Forbidden: You cannot approve/reject leave." };
     const leaveRequest = await prisma.leaveRequest.findUnique({
-      where: { id: leaveId, companyId: actor.companyId },
+      where: actor.role === 'SUPER_ADMIN' ? { id: leaveId } : { id: leaveId, companyId: actor.companyId! },
       include: { employee: true, leaveType: true }
     });
     if (!leaveRequest) throw new Error("Leave request not found");
@@ -70,13 +70,13 @@ export async function updateLeaveStatus(leaveId: string, status: 'APPROVED' | 'R
     const leave = await prisma.leaveRequest.update({ where: { id: leaveId }, data: updateData, include: { employee: true, leaveType: true } });
     if (leave.employee?.userId) {
       const leaveTypeName = leave.leaveType?.name ?? 'Leave';
-      await notifyEmployee(actor.companyId, leave.employee.userId,
+      await notifyEmployee(leaveRequest.companyId, leave.employee.userId,
         `${leaveTypeName} ${status === 'APPROVED' ? 'Approved' : 'Rejected'}`,
         status === 'APPROVED' ? `Your ${leaveTypeName} for ${leave.totalDays} day(s) has been approved.` : `Your ${leaveTypeName} for ${leave.totalDays} day(s) was rejected.${rejectionReason ? ' Reason: '+rejectionReason : ''}`,
         "/dashboard/employee/leaves"
       );
     }
-    await logAudit({ companyId: actor.companyId, userId: actor.id, module: 'LEAVE', action: status === 'APPROVED' ? 'APPROVE' : 'REJECT', recordId: leaveId, oldData: { status: leaveRequest.status }, newData: { status, totalDays: leave.totalDays, rejectionReason } });
+    await logAudit({ companyId: leaveRequest.companyId, userId: actor.id, module: 'LEAVE', action: status === 'APPROVED' ? 'APPROVE' : 'REJECT', recordId: leaveId, oldData: { status: leaveRequest.status }, newData: { status, totalDays: leave.totalDays, rejectionReason } });
     revalidatePath('/dashboard', 'layout');
     return { success: true };
   } catch (error: any) {
@@ -90,14 +90,14 @@ export async function managerApproveLeave(leaveId: string) {
   try {
     const actor = await getActor();
     if (!canManagerApproveLeave(actor.role)) return { error: "Forbidden." };
-    const leaveRequest = await prisma.leaveRequest.findUnique({ where: { id: leaveId, companyId: actor.companyId }, include: { employee: true, leaveType: true } });
+    const leaveRequest = await prisma.leaveRequest.findUnique({ where: actor.role === 'SUPER_ADMIN' ? { id: leaveId } : { id: leaveId, companyId: actor.companyId }, include: { employee: true, leaveType: true } });
     if (!leaveRequest) throw new Error("Leave request not found");
     if (leaveRequest.managerApprovalStatus === 'APPROVED') return { success: true, message: "Already manager-approved" };
     await prisma.leaveRequest.update({ where: { id: leaveId }, data: { managerApprovalStatus: 'APPROVED', approvedById: actor.id } });
     if (leaveRequest.employee?.userId) {
-      await notifyEmployee(actor.companyId, leaveRequest.employee.userId, "Leave — Manager Approved", `Your ${leaveRequest.leaveType?.name ?? 'leave'} was approved by your manager. Awaiting HR.`, "/dashboard/employee/leaves");
+      await notifyEmployee(leaveRequest.companyId, leaveRequest.employee.userId, "Leave — Manager Approved", `Your ${leaveRequest.leaveType?.name ?? 'leave'} was approved by your manager. Awaiting HR.`, "/dashboard/employee/leaves");
     }
-    await logAudit({ companyId: actor.companyId, userId: actor.id, module: 'LEAVE', action: 'MANAGER_APPROVE', recordId: leaveId, oldData: { managerApprovalStatus: 'PENDING' }, newData: { managerApprovalStatus: 'APPROVED' } });
+    await logAudit({ companyId: leaveRequest.companyId, userId: actor.id, module: 'LEAVE', action: 'MANAGER_APPROVE', recordId: leaveId, oldData: { managerApprovalStatus: 'PENDING' }, newData: { managerApprovalStatus: 'APPROVED' } });
     revalidatePath('/dashboard', 'layout');
     return { success: true, message: "Manager approval recorded." };
   } catch (error: any) {

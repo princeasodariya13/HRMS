@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { applyLeave } from "./actions";
 import { Calendar, AlertCircle, CheckCircle2 } from "lucide-react";
 
 export function ApplyLeaveForm({ leaveTypes = [] }: { leaveTypes?: any[] }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const router = useRouter();
 
   async function handleSubmit(formData: FormData) {
     setIsSubmitting(true);
@@ -20,6 +22,7 @@ export function ApplyLeaveForm({ leaveTypes = [] }: { leaveTypes?: any[] }) {
       setMessage({ type: "success", text: "Leave request submitted successfully!" });
       const form = document.getElementById("leave-form") as HTMLFormElement;
       form.reset();
+      router.refresh();
     }
     
     setIsSubmitting(false);
@@ -43,7 +46,7 @@ export function ApplyLeaveForm({ leaveTypes = [] }: { leaveTypes?: any[] }) {
       )}
 
       <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">Leave Type</label>
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Leave Type</label>
         <select 
           name="leaveTypeId" 
           required
@@ -61,7 +64,7 @@ export function ApplyLeaveForm({ leaveTypes = [] }: { leaveTypes?: any[] }) {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Start Date</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Start Date</label>
           <input 
             type="date" 
             name="startDate" 
@@ -70,7 +73,7 @@ export function ApplyLeaveForm({ leaveTypes = [] }: { leaveTypes?: any[] }) {
           />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">End Date</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">End Date</label>
           <input 
             type="date" 
             name="endDate" 
@@ -81,7 +84,7 @@ export function ApplyLeaveForm({ leaveTypes = [] }: { leaveTypes?: any[] }) {
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">Reason</label>
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Reason</label>
         <textarea 
           name="reason" 
           rows={3}

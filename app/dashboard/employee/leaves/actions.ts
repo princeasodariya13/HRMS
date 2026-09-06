@@ -3,6 +3,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { revalidatePath } from "next/cache";
+import { logAudit } from "@/lib/auditLog";
 import prisma from "@/lib/prisma";
 
 export async function applyLeave(formData: FormData) {
@@ -44,7 +45,7 @@ export async function applyLeave(formData: FormData) {
   }
 
   try {
-    await prisma.leaveRequest.create({
+    const record = await prisma.leaveRequest.create({
       data: {
         employeeId: employee.id,
         companyId: employee.companyId,
@@ -55,6 +56,16 @@ export async function applyLeave(formData: FormData) {
         reason: reason,
         status: "PENDING"
       }
+    });
+
+    await logAudit({
+      companyId: employee.companyId,
+      userId: user.id,
+      module: 'LEAVE',
+      action: 'CREATE',
+      recordId: record.id,
+      oldData: null,
+      newData: { status: "PENDING", startDate, endDate, totalDays: diffDays },
     });
 
     // Notify Admins
@@ -116,6 +127,16 @@ export async function deleteLeave(leaveId: string) {
 
     await prisma.leaveRequest.delete({
       where: { id: leaveId }
+    });
+
+    await logAudit({
+      companyId: dbUser.companyId,
+      userId: user.id,
+      module: 'LEAVE',
+      action: 'DELETE',
+      recordId: leaveId,
+      oldData: { status: leave.status },
+      newData: null,
     });
 
     revalidatePath("/dashboard/employee/leaves");

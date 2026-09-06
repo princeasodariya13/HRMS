@@ -43,7 +43,7 @@ export function LeavesClient({ stats, leaves }: LeavesClientProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-[#111827] dark:text-[#F3F4F6]">Leave Management</h1>
-          <p className="text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280] text-sm">Review, approve, and track employee time off.</p>
+          <p className="text-[#6B7280] dark:text-[#9CA3AF] text-sm">Review, approve, and track employee time off.</p>
         </div>
         <button className="bg-[#111827] dark:bg-[#F3F4F6] text-white dark:text-[#111827] hover:bg-[#1f2937] dark:hover:bg-[#E5E7EB] shadow-sm rounded-xl px-4 py-2.5 text-sm font-semibold transition-all flex items-center justify-center gap-2">
           <Plus className="w-4 h-4" />
@@ -58,7 +58,7 @@ export function LeavesClient({ stats, leaves }: LeavesClientProps) {
             <CalendarDays className="w-6 h-6 text-blue-600" />
           </div>
           <div>
-            <p className="text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280] text-sm font-medium">Pending Requests</p>
+            <p className="text-[#6B7280] dark:text-[#9CA3AF] text-sm font-medium">Pending Requests</p>
             <p className="text-2xl font-bold text-[#111827] dark:text-[#F3F4F6]">{stats.pending}</p>
           </div>
         </div>
@@ -67,7 +67,7 @@ export function LeavesClient({ stats, leaves }: LeavesClientProps) {
             <Check className="w-6 h-6 text-emerald-600" />
           </div>
           <div>
-            <p className="text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280] text-sm font-medium">Approved This Month</p>
+            <p className="text-[#6B7280] dark:text-[#9CA3AF] text-sm font-medium">Approved This Month</p>
             <p className="text-2xl font-bold text-[#111827] dark:text-[#F3F4F6]">{stats.approved}</p>
           </div>
         </div>
@@ -76,7 +76,7 @@ export function LeavesClient({ stats, leaves }: LeavesClientProps) {
             <Clock className="w-6 h-6 text-amber-600" />
           </div>
           <div>
-            <p className="text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280] text-sm font-medium">On Leave Today</p>
+            <p className="text-[#6B7280] dark:text-[#9CA3AF] text-sm font-medium">On Leave Today</p>
             <p className="text-2xl font-bold text-[#111827] dark:text-[#F3F4F6]">{stats.onLeaveToday}</p>
           </div>
         </div>
@@ -86,13 +86,13 @@ export function LeavesClient({ stats, leaves }: LeavesClientProps) {
         <div className="flex items-center gap-6 px-6 border-b border-[#E5E7EB] dark:border-[#1E293B]">
           <button
             onClick={() => setActiveTab('pending')}
-            className={`py-4 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'pending' ? 'border-[#111827] text-[#111827] dark:text-[#F3F4F6]' : 'border-transparent text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280] hover:text-[#111827] dark:text-[#F3F4F6]'}`}
+            className={`py-4 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'pending' ? 'border-[#111827] text-[#111827] dark:text-[#F3F4F6]' : 'border-transparent text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#111827] dark:text-[#F3F4F6]'}`}
           >
             Pending Approvals ({pendingLeaves.length})
           </button>
           <button
             onClick={() => setActiveTab('history')}
-            className={`py-4 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'history' ? 'border-[#111827] text-[#111827] dark:text-[#F3F4F6]' : 'border-transparent text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280] hover:text-[#111827] dark:text-[#F3F4F6]'}`}
+            className={`py-4 text-sm font-semibold border-b-2 transition-colors ${activeTab === 'history' ? 'border-[#111827] text-[#111827] dark:text-[#F3F4F6]' : 'border-transparent text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#111827] dark:text-[#F3F4F6]'}`}
           >
             Leave History ({historyLeaves.length})
           </button>
@@ -100,7 +100,7 @@ export function LeavesClient({ stats, leaves }: LeavesClientProps) {
 
         <div className="overflow-x-auto min-h-[300px]">
           <table className="w-full text-sm text-left">
-            <thead className="bg-[#F8FAFC] dark:bg-[#1E293B] border-b border-[#E5E7EB] dark:border-[#1E293B] text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280]">
+            <thead className="bg-[#F8FAFC] dark:bg-[#1E293B] border-b border-[#E5E7EB] dark:border-[#1E293B] text-[#6B7280] dark:text-[#9CA3AF]">
               <tr>
                 <th className="px-6 py-4 font-semibold">Employee</th>
                 <th className="px-6 py-4 font-semibold">Type</th>
@@ -119,25 +119,25 @@ export function LeavesClient({ stats, leaves }: LeavesClientProps) {
                       </div>
                       <div>
                         <div className="font-semibold text-[#111827] dark:text-[#F3F4F6]">{leave.employeeName}</div>
-                        <div className="text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280] text-xs">{leave.department}</div>
+                        <div className="text-[#6B7280] dark:text-[#9CA3AF] text-xs">{leave.department}</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 flex flex-col items-start gap-1">
-                    <span className="bg-purple-50 text-purple-700 px-2.5 py-1 rounded-md text-xs font-semibold border border-purple-200">
+                    <span className="bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 px-2.5 py-1 rounded-md text-xs font-semibold border border-purple-200 dark:border-purple-800">
                       {leave.type.replace('_', ' ')}
                     </span>
                     {leave.balance && (
-                      <span className="text-[10px] text-gray-500 font-medium bg-gray-100 px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">
                         Bal: {leave.balance}
                       </span>
                     )}
                   </td>
                   <td className="px-6 py-4">
                     <div className="font-medium text-[#111827] dark:text-[#F3F4F6]">{leave.durationString}</div>
-                    <div className="text-xs text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280]">{leave.days} day(s)</div>
+                    <div className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">{leave.days} day(s)</div>
                   </td>
-                  <td className="px-6 py-4 text-[#475569] max-w-xs truncate">
+                  <td className="px-6 py-4 text-[#475569] dark:text-[#9CA3AF] max-w-xs truncate">
                     {leave.reason}
                   </td>
                   <td className="px-6 py-4 text-right">
@@ -146,21 +146,21 @@ export function LeavesClient({ stats, leaves }: LeavesClientProps) {
                         <button
                           onClick={() => handleUpdate(leave.id, 'APPROVED')}
                           disabled={isPending}
-                          className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors border border-emerald-100 disabled:opacity-50"
+                          className="p-2 bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 rounded-lg transition-colors border border-emerald-100 dark:border-emerald-800/30 disabled:opacity-50"
                         >
                           <Check className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleUpdate(leave.id, 'REJECTED')}
                           disabled={isPending}
-                          className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors border border-red-100 disabled:opacity-50"
+                          className="p-2 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-lg transition-colors border border-red-100 dark:border-red-800/30 disabled:opacity-50"
                         >
                           <X className="w-4 h-4" />
                         </button>
                       </div>
                     ) : (
                       <div className="flex items-center justify-end gap-3">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${leave.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${leave.status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800'
                           }`}>
                           {leave.status}
                         </span>
@@ -168,7 +168,7 @@ export function LeavesClient({ stats, leaves }: LeavesClientProps) {
                           <button
                             onClick={() => handleUpdate(leave.id, 'APPROVED')}
                             disabled={isPending}
-                            className="p-1.5 bg-gray-50 hover:bg-emerald-50 text-emerald-600 rounded-md transition-colors border border-gray-200 disabled:opacity-50"
+                            className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-md transition-colors border border-gray-200 dark:border-gray-700 disabled:opacity-50"
                             title="Change to Approved"
                           >
                             <Check className="w-4 h-4" />
@@ -178,7 +178,7 @@ export function LeavesClient({ stats, leaves }: LeavesClientProps) {
                           <button
                             onClick={() => handleUpdate(leave.id, 'REJECTED')}
                             disabled={isPending}
-                            className="p-1.5 bg-gray-50 hover:bg-red-50 text-red-600 rounded-md transition-colors border border-gray-200 disabled:opacity-50"
+                            className="p-1.5 bg-gray-50 dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 rounded-md transition-colors border border-gray-200 dark:border-gray-700 disabled:opacity-50"
                             title="Change to Rejected"
                           >
                             <X className="w-4 h-4" />
@@ -191,8 +191,8 @@ export function LeavesClient({ stats, leaves }: LeavesClientProps) {
               ))}
               {displayLeaves.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-[#6B7280] dark:text-[#9CA3AF] dark:text-[#6B7280]">
-                    No leave requests found.
+                  <td colSpan={5} className="px-6 py-8 text-center text-[#6B7280] dark:text-[#9CA3AF]">
+                    {activeTab === 'pending' ? 'No pending leave requests.' : 'No leave history found.'}
                   </td>
                 </tr>
               )}

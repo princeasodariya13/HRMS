@@ -45,14 +45,15 @@ async function LeavesData({ searchParams }: { searchParams: Promise<{ employee?:
   try {
     dbUser = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { companyId: true }
+      select: { companyId: true, role: true }
     });
 
     const companyId = dbUser?.companyId;
+    const isSuperAdmin = dbUser?.role === 'SUPER_ADMIN';
 
-    if (companyId) {
+    if (companyId || isSuperAdmin) {
       const rawLeaves = await prisma.leaveRequest.findMany({
-        where: { companyId, ...(employeeId ? { employeeId } : {}) },
+        where: { ...(isSuperAdmin ? {} : { companyId }), ...(employeeId ? { employeeId } : {}) },
         include: { 
           employee: { include: { department: true } },
           leaveType: true 
@@ -61,7 +62,7 @@ async function LeavesData({ searchParams }: { searchParams: Promise<{ employee?:
       });
 
       const activeAllocations = await prisma.leaveAllocation.findMany({
-        where: { employee: { companyId }, status: 'APPROVED' },
+        where: { ...(isSuperAdmin ? {} : { employee: { companyId } }), status: 'APPROVED' },
       });
 
       leavesData = rawLeaves.map(leave => {
