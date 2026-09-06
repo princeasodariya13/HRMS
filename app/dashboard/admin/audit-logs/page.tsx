@@ -27,9 +27,10 @@ async function AuditData() {
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect('/login');
   const dbUser = await prisma.user.findUnique({ where: { id: session.user.id } });
+  const isSuperAdmin = dbUser?.role === 'SUPER_ADMIN';
   if (!dbUser || !canViewAuditLogs(dbUser.role)) redirect('/dashboard/admin');
   const logs = await prisma.auditLog.findMany({
-    where: { companyId: dbUser.companyId },
+    where: isSuperAdmin ? {} : { companyId: dbUser.companyId },
     orderBy: { createdAt: 'desc' },
     take: 200,
   });

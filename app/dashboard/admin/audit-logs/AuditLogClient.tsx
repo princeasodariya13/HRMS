@@ -66,18 +66,18 @@ export function AuditLogClient({ logs }: { logs: AuditEntry[] }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#E5E7EB] dark:border-[#1E293B] bg-[#F9FAFB] dark:bg-[#1E293B]/50">
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Date/Time</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] uppercase tracking-wide">User</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Module</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Action</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Record ID</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Changes</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] dark:text-[#9CA3AF] uppercase tracking-wide">Date/Time</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] dark:text-[#9CA3AF] uppercase tracking-wide">User</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] dark:text-[#9CA3AF] uppercase tracking-wide">Module</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] dark:text-[#9CA3AF] uppercase tracking-wide">Action</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] dark:text-[#9CA3AF] uppercase tracking-wide">Record ID</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-[#6B7280] dark:text-[#9CA3AF] uppercase tracking-wide">Changes</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((log, i) => (
                   <tr key={log.id} className={`border-b border-[#F3F4F6] dark:border-[#1E293B] hover:bg-[#F9FAFB] dark:hover:bg-[#1E293B]/30 transition-colors ${i % 2 === 0 ? '' : 'bg-[#FAFAFA] dark:bg-[#0F172A]/50'}`}>
-                    <td className="px-4 py-3 text-xs text-[#6B7280] whitespace-nowrap">
+                    <td className="px-4 py-3 text-xs text-[#6B7280] dark:text-[#9CA3AF] whitespace-nowrap">
                       {new Date(log.createdAt).toLocaleString('en-IN', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })}
                     </td>
                     <td className="px-4 py-3">
@@ -85,17 +85,17 @@ export function AuditLogClient({ logs }: { logs: AuditEntry[] }) {
                       {log.ipAddress && <div className="text-xs text-[#9CA3AF]">{log.ipAddress}</div>}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${MODULE_COLORS[log.module] ?? 'bg-gray-100 text-gray-600'}`}>{log.module}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${MODULE_COLORS[log.module] ?? 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}>{log.module}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ACTION_COLORS[log.action] ?? 'bg-gray-100 text-gray-600'}`}>{log.action}</span>
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${ACTION_COLORS[log.action] ?? 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}>{log.action}</span>
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-[#9CA3AF]">{log.recordId.slice(0,12)}...</td>
                     <td className="px-4 py-3 max-w-xs">
                       {(log.oldData || log.newData) ? (
                         <div className="space-y-0.5">
-                          {log.oldData && <div className="text-xs text-red-500 truncate">− {log.oldData}</div>}
-                          {log.newData && <div className="text-xs text-emerald-600 truncate">+ {log.newData}</div>}
+                          {log.oldData && <div className="text-xs text-red-500 dark:text-red-400 truncate">− {log.oldData}</div>}
+                          {log.newData && <div className="text-xs text-emerald-600 dark:text-emerald-400 truncate">+ {log.newData}</div>}
                         </div>
                       ) : <span className="text-xs text-[#9CA3AF]">—</span>}
                     </td>
