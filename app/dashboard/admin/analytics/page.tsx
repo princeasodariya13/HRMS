@@ -27,15 +27,16 @@ async function AnalyticsData() {
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect('/login');
   const dbUser = await prisma.user.findUnique({ where: { id: session.user.id } });
+  const isSuperAdmin = dbUser?.role === 'SUPER_ADMIN';
   if (!dbUser || !canViewAnalytics(dbUser.role)) redirect('/dashboard/admin');
 
   const now = new Date();
   const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 11, 1);
 
   const [payrollRuns, leaveRequests, departments] = await Promise.all([
-    prisma.payrollRun.findMany({ where: { companyId: dbUser.companyId, periodStart: { gte: twelveMonthsAgo } }, orderBy: { periodStart: 'asc' } }),
-    prisma.leaveRequest.findMany({ where: { companyId: dbUser.companyId, createdAt: { gte: twelveMonthsAgo } } }),
-    prisma.department.findMany({ where: { companyId: dbUser.companyId }, include: { employees: { where: { deletedAt: null }, select: { id: true } } } }),
+    prisma.payrollRun.findMany({ where: { ...(isSuperAdmin ? {} : { companyId: dbUser.companyId }), periodStart: { gte: twelveMonthsAgo } }, orderBy: { periodStart: 'asc' } }),
+    prisma.leaveRequest.findMany({ where: { ...(isSuperAdmin ? {} : { companyId: dbUser.companyId }), createdAt: { gte: twelveMonthsAgo } } }),
+    prisma.department.findMany({ where: isSuperAdmin ? {} : { companyId: dbUser.companyId }, include: { employees: { where: { deletedAt: null }, select: { id: true } } } }),
   ]);
 
   // Payroll cost trend
@@ -111,9 +112,9 @@ async function AnalyticsData() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-[#F9FAFB] dark:bg-[#1E293B]/50">
-              <th className="text-left px-5 py-3 text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Department</th>
-              <th className="text-right px-5 py-3 text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Employees</th>
-              <th className="text-right px-5 py-3 text-xs font-semibold text-[#6B7280] uppercase tracking-wide">Leave Requests</th>
+              <th className="text-left px-5 py-3 text-xs font-semibold text-[#6B7280] dark:text-[#9CA3AF] uppercase tracking-wide">Department</th>
+              <th className="text-right px-5 py-3 text-xs font-semibold text-[#6B7280] dark:text-[#9CA3AF] uppercase tracking-wide">Employees</th>
+              <th className="text-right px-5 py-3 text-xs font-semibold text-[#6B7280] dark:text-[#9CA3AF] uppercase tracking-wide">Leave Requests</th>
             </tr>
           </thead>
           <tbody>

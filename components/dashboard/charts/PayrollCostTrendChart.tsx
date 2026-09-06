@@ -9,7 +9,7 @@ export function PayrollCostTrendChart({ data }: { data: PayrollCostData[] }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.15)" />
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(107₹14₹28,0.15)" />
         <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
         <YAxis tickFormatter={fmt} tick={{ fontSize: 12, fill: '#9CA3AF' }} axisLine={false} tickLine={false} />
         <Tooltip formatter={(v) => [`₹${Number(v || 0).toLocaleString('en-IN')}`, 'Payroll Cost']} contentStyle={{ background: '#1E293B', border: 'none', borderRadius: 8, color: '#F3F4F6', fontSize: 12 }} />
