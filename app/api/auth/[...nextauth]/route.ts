@@ -31,20 +31,22 @@ const prismaAdapter = {
 export const authOptions: NextAuthOptions = {
   adapter: prismaAdapter,
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      allowDangerousEmailAccountLinking: true,
-      // Only request standard profile scopes — drive.file caused silent rejection
-      authorization: {
-        params: {
-          prompt: "consent",
-          access_type: "offline",
-          response_type: "code",
-          scope: "openid email profile"
+    {
+      ...GoogleProvider({
+        clientId: process.env.GOOGLE_CLIENT_ID!,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+        // Only request standard profile scopes — drive.file caused silent rejection
+        authorization: {
+          params: {
+            prompt: "consent",
+            access_type: "offline",
+            response_type: "code",
+            scope: "openid email profile"
+          }
         }
-      }
-    }),
+      }),
+      allowDangerousEmailAccountLinking: true,
+    },
     CredentialsProvider({
       name: "Credentials",
       credentials: {
