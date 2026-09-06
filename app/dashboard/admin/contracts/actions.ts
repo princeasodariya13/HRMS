@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma'
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { ContractStatus } from '@prisma/client'
+import { logAudit } from '@/lib/auditLog'
 
 export async function getContracts(employeeId?: string) {
   try {
@@ -96,6 +97,15 @@ export async function createContract(data: {
         isActive
       }
     });
+    await logAudit({
+      companyId: employee.companyId,
+      userId: user.id,
+      module: 'CONTRACT',
+      action: 'CREATE',
+      recordId: contract.id,
+      oldData: null,
+      newData: { status: data.status, wage: data.wage, startDate: data.startDate },
+    });
 
     revalidatePath('/dashboard/admin/contracts');
     revalidatePath('/dashboard/admin/employees');
@@ -152,6 +162,15 @@ export async function updateContract(id: string, data: {
         isActive
       }
     });
+    await logAudit({
+      companyId: existingContract.companyId,
+      userId: user.id,
+      module: 'CONTRACT',
+      action: 'UPDATE',
+      recordId: id,
+      oldData: { status: existingContract.status, wage: existingContract.wage },
+      newData: { status: data.status, wage: data.wage },
+    });
 
     revalidatePath('/dashboard/admin/contracts');
     revalidatePath('/dashboard/admin/employees');
@@ -179,6 +198,15 @@ export async function deleteContract(id: string) {
     }
 
     await prisma.contract.delete({ where: { id } });
+    await logAudit({
+      companyId: existingContract.companyId,
+      userId: user.id,
+      module: 'CONTRACT',
+      action: 'DELETE',
+      recordId: id,
+      oldData: { status: existingContract.status, wage: existingContract.wage },
+      newData: null,
+    });
 
     revalidatePath('/dashboard/admin/contracts');
     revalidatePath('/dashboard/admin/employees');

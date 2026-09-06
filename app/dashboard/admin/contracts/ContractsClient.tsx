@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import React, { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { 
   FileText, Plus, Search, Filter, Briefcase, 
   MoreVertical, CheckCircle2, AlertCircle, Calendar, 
@@ -22,6 +23,10 @@ export function ContractsClient({
   selectedEmployeeId?: string;
 }) {
   const [contracts, setContracts] = useState(initialContracts);
+  
+  // Sync state when server props change (e.g. after router.refresh)
+  React.useEffect(() => { setContracts(initialContracts); }, [initialContracts]);
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [employeeFilter, setEmployeeFilter] = useState(selectedEmployeeId || "ALL");
@@ -31,6 +36,7 @@ export function ContractsClient({
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
 
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   const filteredContracts = contracts.filter(c => {
     const matchesSearch = 
@@ -150,9 +156,9 @@ export function ContractsClient({
             <tbody className="divide-y divide-[#E5E7EB] dark:divide-[#1E293B]">
               {filteredContracts.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-[#6B7280] dark:text-[#9CA3AF]">
+                  <td colSpan={6} className="px-6 py-12 text-center text-[#6B7280] dark:text-[#9CA3AF]">
                     <FileText className="w-8 h-8 mx-auto mb-3 opacity-20" />
-                    <p>No contracts found.</p>
+                    <p>{searchQuery ? `No contracts found matching "${searchQuery}".` : "No contracts found."}</p>
                   </td>
                 </tr>
               ) : (
@@ -167,8 +173,13 @@ export function ContractsClient({
                           {contract.employee?.firstName?.[0]}{contract.employee?.lastName?.[0]}
                         </div>
                         <div>
-                          <div className="font-semibold text-[#111827] dark:text-[#F3F4F6]">
+                          <div className="font-semibold text-[#111827] dark:text-[#F3F4F6] flex items-center gap-2">
                             {contract.employee?.firstName} {contract.employee?.lastName}
+                            {(contract.employee?.status === 'TERMINATED' || contract.employee?.status === 'INACTIVE') && (
+                              <span className="text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                {contract.employee?.status}
+                              </span>
+                            )}
                           </div>
                           <div className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">{contract.employee?.workEmail}</div>
                         </div>
@@ -249,7 +260,7 @@ export function ContractsClient({
           salaryStructures={salaryStructures}
           onClose={() => {
             setIsModalOpen(false);
-            window.location.reload(); // Simple refresh for now, or use router.refresh() if router is passed
+            router.refresh();
           }} 
         />
       )}
